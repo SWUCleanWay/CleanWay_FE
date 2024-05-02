@@ -1,5 +1,7 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:http/http.dart' as http;
 
 class CreateProjectScreen extends StatefulWidget {
   @override
@@ -58,6 +60,41 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
       setState(() {
         selectedTime = picked;
       });
+    }
+  }
+
+  Future<void> _registerCrew() async {
+    Map<String, dynamic> registerCrewData = {
+      'crewName': crewNameController.text,
+      'startLocation': startLocationController.text,
+      'wayPoints': wayPointsControllers.map((controller) => controller.text).toList(),
+      'destination': destinationController.text,
+      'date': DateFormat('yyyy-MM-dd').format(selectedDate),
+      'time': selectedTime.format(context),
+      'capacity': int.parse(capacityController.text),
+      'description': descriptionController.text,
+    };
+
+    String jsonBody = json.encode(crewData);
+
+    try {
+      http.Response response = await http.post(
+        //Uri.parse('https://your-api-url/crew/add'),
+        Uri.parse('https://jsonplaceholder.typicode.com/posts'),
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+        body: jsonBody,
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        print("success");
+        //상세페이지로 이동
+      } else {
+        print('Failed to register crew: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error occurred: $e');
     }
   }
 
@@ -208,7 +245,7 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
               ),
               SizedBox(height: 10),
               TextField(
-                controller: numberOfPeopleController,
+                controller: capacityController,
                 decoration: InputDecoration(
                   hintText: '모집 인원',
                   border: OutlineInputBorder(),
@@ -240,9 +277,7 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
       bottomNavigationBar: Padding(
         padding: EdgeInsets.all(8.0),
         child: ElevatedButton(
-          onPressed: () {
-            // TODO: Implement upload logic
-          },
+          onPressed: _registerCrew,
           child: Text('등록하기'),
           style: ElevatedButton.styleFrom(
             backgroundColor: Theme
