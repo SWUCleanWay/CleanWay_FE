@@ -42,7 +42,7 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Create Post'),
+        title: Text('크루원 모집하기'),
         leading: IconButton(
           icon: Icon(Icons.arrow_back),
           onPressed: () => Navigator.of(context).pop(),
@@ -61,15 +61,15 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              SizedBox(height: 8.0),
+              SizedBox(height: 10),
               TextField(
                 controller: crewNameController,
                 decoration: InputDecoration(
-                  hintText: '모집하는 크루의 이름을 지어주세요!',
+                  hintText: '크루의 이름을 지어주세요!',
                   border: OutlineInputBorder(),
                 ),
               ),
-              SizedBox(height: 16.0),
+              SizedBox(height: 20),
               Text(
                 '루트',
                 style: TextStyle(
@@ -103,10 +103,11 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
               ),
               ListTile(
                 title: Text(
-                    '날짜 선택하기: ${DateFormat('yyyy-MM-dd').format(selectedDate)}'
+                    '${DateFormat('yyyy-MM-dd').format(selectedDate)}'
                 ),
                 onTap: () => _selectDate(context),
               ),
+              SizedBox(height: 20),
               Text(
                 '시간',
                 style: TextStyle(
@@ -115,9 +116,10 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
                 ),
               ),
               ListTile(
-                title: Text('시간 선택하기: ${selectedTime.format(context)}'),
+                title: Text('${selectedTime.format(context)}'),
                 onTap: () => _selectTime(context),
               ),
+              SizedBox(height: 20),
               Text(
                 '모집인원',
                 style: TextStyle(
@@ -125,6 +127,7 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
                   fontWeight: FontWeight.bold,
                 ),
               ),
+              SizedBox(height: 10),
               TextField(
                 controller: numberOfPeopleController,
                 decoration: InputDecoration(
@@ -133,7 +136,7 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
                 ),
                 keyboardType: TextInputType.number,
               ),
-              SizedBox(height: 16.0),
+              SizedBox(height: 20.0),
               Text(
                 '모집 내용',
                 style: TextStyle(
@@ -141,6 +144,7 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
                   fontWeight: FontWeight.bold,
                 ),
               ),
+              SizedBox(height: 10),
               TextField(
                 controller: descriptionController,
                 decoration: InputDecoration(
@@ -160,10 +164,15 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
           onPressed: () {
             // TODO: Implement upload logic
           },
-          child: Text('Upload Post'),
+          child: Text('등록하기'),
           style: ElevatedButton.styleFrom(
+            backgroundColor: Theme.of(context).colorScheme.primary,
+            foregroundColor: Colors.white,
             minimumSize: Size(double.infinity, 50),
+            shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
           ),
+        ),
         ),
       ),
     );

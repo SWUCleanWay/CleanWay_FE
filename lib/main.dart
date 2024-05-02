@@ -193,11 +193,6 @@ class _MainScreenState extends State<MainScreen> {
                   return GestureDetector(
                     onTap: () {
                       // TODO: 여기에 상세 페이지로의 경로를 설정하면 됩니다.
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('상세 페이지로 이동: ${post['title']}'),
-                        ),
-                      );
                     },
                     child: Card(
                       margin: const EdgeInsets.symmetric(vertical: 10),
