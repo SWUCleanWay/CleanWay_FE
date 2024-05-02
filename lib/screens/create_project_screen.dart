@@ -10,9 +10,32 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
   TextEditingController crewNameController = TextEditingController();
   TextEditingController numberOfPeopleController = TextEditingController();
   TextEditingController descriptionController = TextEditingController();
+  List<TextEditingController> wayPointsControllers = [
+    TextEditingController()
+  ]; // 경유지를 위한 컨트롤러 리스트
+  TextEditingController startLocationController = TextEditingController();
+  TextEditingController destinationController = TextEditingController();
   DateTime selectedDate = DateTime.now();
   TimeOfDay selectedTime = TimeOfDay.now();
   String? selectedOption;
+
+  bool showWaypointField = false;
+
+  void _addWayPoint() {
+    setState(() {
+      if (!showWaypointField) {
+        showWaypointField = true;
+      } else {
+        wayPointsControllers.add(TextEditingController());
+      }
+    });
+  }
+
+  void _removeWayPoint(int index) {
+    setState(() {
+      wayPointsControllers.removeAt(index);
+    });
+  }
 
   Future<void> _selectDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
@@ -40,6 +63,59 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
 
   @override
   Widget build(BuildContext context) {
+    List<Widget> routeWidgets = [];
+    if (selectedOption == '직접 설정하기') {
+      routeWidgets = [
+        TextField(
+          controller: startLocationController,
+          decoration: InputDecoration(
+            labelText: '출발지',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        SizedBox(height: 10),
+        if (showWaypointField) ...[
+          ...List.generate(wayPointsControllers.length, (index) {
+            return Row(
+              children: [
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: 8.0),
+                    child: TextField(
+                      controller: wayPointsControllers[index],
+                      decoration: InputDecoration(
+                        labelText: '경유지',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                  ),
+                ),
+                IconButton(
+                  icon: Icon(Icons.clear),
+                  onPressed: () => _removeWayPoint(index),
+                ),
+              ],
+            );
+          }).toList(),
+          SizedBox(height: 10),
+        ],
+        TextButton.icon(
+          icon: Icon(Icons.add),
+          label: Text('경유지 추가'),
+          onPressed: _addWayPoint,
+        ),
+        SizedBox(height: 10),
+        TextField(
+          controller: destinationController,
+          decoration: InputDecoration(
+            labelText: '목적지',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        SizedBox(height: 20),
+      ];
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: Text('크루원 모집하기'),
@@ -77,7 +153,8 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              ...[ // This ellipsis means that other widgets go here
+              SizedBox(height: 16.0),
+              ...[
                 '직접 설정하기',
                 '내 루트 불러오기',
                 '내 장소 불러오기'
@@ -93,6 +170,8 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
                   },
                 );
               }).toList(),
+              SizedBox(height: 16.0),
+              ...routeWidgets,
               SizedBox(height: 16.0),
               Text(
                 '날짜',
@@ -166,13 +245,16 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
           },
           child: Text('등록하기'),
           style: ElevatedButton.styleFrom(
-            backgroundColor: Theme.of(context).colorScheme.primary,
+            backgroundColor: Theme
+                .of(context)
+                .colorScheme
+                .primary,
             foregroundColor: Colors.white,
             minimumSize: Size(double.infinity, 50),
             shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(12),
+            ),
           ),
-        ),
         ),
       ),
     );
