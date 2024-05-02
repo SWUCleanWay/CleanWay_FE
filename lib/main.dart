@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'screens/create_project_screen.dart';
+import 'screens/create_report_screen.dart';
 import 'widgets/bottom_navigation.dart';
 import 'screens/crew.dart';
 import 'screens/route.dart';
@@ -44,15 +45,25 @@ class Post {
 }
 
 class MainScreen extends StatefulWidget {
-  const MainScreen({Key? key}) : super(key: key);
+  final bool initialCrewSelected;
+
+  const MainScreen({Key? key, this.initialCrewSelected = true}) : super(key: key);
 
   @override
   _MainScreenState createState() => _MainScreenState();
 }
 
-class _MainScreenState extends State {
+class _MainScreenState extends State<MainScreen> {
+  late bool _isCrewPostSelected;  // 상태를 late로 선언
+
+  @override
+  void initState() {
+    super.initState();
+    _isCrewPostSelected = widget.initialCrewSelected;  // 초기 상태 설정
+  }
+
   int _selectedIndex = 0;
-  bool _isCrewPostSelected = true;
+  //bool _isCrewPostSelected = true;
 
   // mock data list
   final List<Map<String, dynamic>>  mockCrewData = [
@@ -195,19 +206,14 @@ class _MainScreenState extends State {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
+                            SizedBox(height: 8),
                             Text(post['title'], style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                            SizedBox(height: 8),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.start,
-                              children: [
-                                Text('작성자: ${post['user']}', style: TextStyle(fontSize: 16)),
-                                Text(' | ', style: TextStyle(fontSize: 16)),
-                                Text('작성 시간: ${post['date']}', style: TextStyle(fontSize: 16)),
-                              ],
-                            ),
-
-                            SizedBox(height: 8),
-                            Text('모집 인원: ${post['capacity']}', style: TextStyle(fontSize: 16)),
+                            SizedBox(height: 5),
+                            Text('${post['user']}', style: TextStyle(fontSize: 14)),
+                            SizedBox(height: 5),
+                            Text('${post['date']}', style: TextStyle(fontSize: 14)),
+                            SizedBox(height: 5),
+                            Text('모집 인원: ${post['capacity']}', style: TextStyle(fontSize: 14)),
                           ],
                         ),
                       ),
@@ -272,12 +278,12 @@ class _MainScreenState extends State {
               onPressed: () {
                 final RenderBox button = context.findRenderObject() as RenderBox;
                 final RenderBox overlay = Overlay.of(context)!.context.findRenderObject() as RenderBox;
-                final RelativeRect position = RelativeRect.fromRect(
-                  Rect.fromPoints(
-                    button.localToGlobal(button.size.bottomLeft(Offset.zero), ancestor: overlay),
-                    button.localToGlobal(button.size.bottomRight(Offset.zero), ancestor: overlay),
-                  ),
-                  Offset.zero & overlay.size,
+                final Offset buttonPosition = button.localToGlobal(Offset.zero, ancestor: overlay);
+                final RelativeRect position = RelativeRect.fromLTRB(
+                  buttonPosition.dx - 180, // 버튼의 시작점으로부터 왼쪽으로 팝업 메뉴 너비만큼 오프셋
+                  buttonPosition.dy - button.size.height/2, // 버튼 위로 오프셋
+                  buttonPosition.dx, // 버튼의 시작점
+                  overlay.size.height - buttonPosition.dy, // 버튼 아래로 오프셋
                 );
                 showMenu(
                   context: context,
@@ -286,6 +292,7 @@ class _MainScreenState extends State {
                     PopupMenuItem(
                       child: GestureDetector(
                         onTap: () {
+                          Navigator.pop(context);
                           Navigator.of(context).push(
                             MaterialPageRoute(builder: (context) => CreateProjectScreen()),
                           );
@@ -294,14 +301,22 @@ class _MainScreenState extends State {
                       ),
                     ),
                     PopupMenuItem(
-                      child: Text('제보하기'),
-                      // '제보하기'를 선택하면 해당 기능을 구현해 주어야 합니다.
+                      child: GestureDetector(
+                        onTap: () {
+                          Navigator.pop(context);
+                          Navigator.of(context).push(
+                            MaterialPageRoute(builder: (context) => CreateReportScreen()),
+                          );
+                        },
+                        child: Text('제보하기'),
+                      ),
                     ),
                   ],
                 );
               },
               child: Icon(Icons.add),
               tooltip: 'Create Project',
+              shape: CircleBorder(),
             ),
           );
         },
@@ -314,6 +329,5 @@ class _MainScreenState extends State {
     );
   }
 }
-
 
 
