@@ -10,7 +10,7 @@ class CreateProjectScreen extends StatefulWidget {
 
 class _CreateProjectScreenState extends State<CreateProjectScreen> {
   TextEditingController crewNameController = TextEditingController();
-  TextEditingController numberOfPeopleController = TextEditingController();
+  TextEditingController capacityController = TextEditingController();
   TextEditingController descriptionController = TextEditingController();
   List<TextEditingController> wayPointsControllers = [
     TextEditingController()
@@ -75,7 +75,7 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
       'description': descriptionController.text,
     };
 
-    String jsonBody = json.encode(crewData);
+    String jsonBody = json.encode(registerCrewData);
 
     try {
       http.Response response = await http.post(

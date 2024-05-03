@@ -4,6 +4,24 @@ import 'package:clean_way/main.dart';
 import 'route.dart';
 import 'my.dart';
 
+class Crew {
+  final String name;
+  final String members;
+  final String joinDate;
+
+  Crew({
+    required this.name,
+    required this.members,
+    required this.joinDate
+  });
+}
+
+List<Crew> mockCrews = [
+  Crew(name: "크루 A", members: "5", joinDate: "2024-04-01"),
+  Crew(name: "크루 B", members: "3", joinDate: "2024-04-02"),
+  Crew(name: "크루 C", members: "2", joinDate: "2024-04-03"),
+];
+
 class CrewScreen extends StatelessWidget {
   const CrewScreen({Key? key}) : super(key: key);
 
@@ -11,32 +29,43 @@ class CrewScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('크루'),
+        title: Text('내 크루'),
       ),
-      body: Center(
-        child: Text('크루 화면'),
+      body: Column(
+        children: [
+          Divider(height: 1),  // 첫 번째 아이템 위에 구분선 추가
+          Expanded(
+            child: ListView.separated(
+              itemCount: mockCrews.length,
+              itemBuilder: (context, index) {
+                Crew crew = mockCrews[index];
+                return ListTile(
+                  title: Text(crew.name, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Text('멤버 수: ${crew.members}명', style: TextStyle(fontSize: 14)),
+                      Text('참여 날짜: ${crew.joinDate}', style: TextStyle(fontSize: 14)),
+                    ],
+                  ),
+                );
+              },
+              separatorBuilder: (context, index) => Divider(),
+            ),
+          ),
+        ],
       ),
       bottomNavigationBar: BottomNavigation(
-        selectedIndex: 1, // 크루 화면이므로 인덱스는 1
+        selectedIndex: 1,
         onItemSelected: (index) {
-          // 네비게이션 메뉴 클릭 시
           if (index == 0) {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (context) => MainScreen()), // 홈 화면으로 이동
-            );
+            Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => MainScreen()));
           } else if (index == 1) {
-            // 이미 크루 화면이므로 아무것도 하지 않음
+            // 현재 화면 유지
           } else if (index == 2) {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (context) => RouteScreen()), // 루트 화면으로 이동
-            );
+            Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => RouteScreen()));
           } else if (index == 3) {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (context) => MyScreen()), // MY 화면으로 이동
-            );
+            Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => MyScreen()));
           }
         },
       ),
