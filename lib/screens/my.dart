@@ -14,7 +14,38 @@ class MyScreen extends StatelessWidget {
         title: Text('MY'),
       ),
       body: Center(
-        child: Text('MY 화면'),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            CircleAvatar(
+              radius: 40,
+              backgroundColor: Colors.grey[200],
+              child: Icon(Icons.person, size: 60, color: Colors.grey),
+            ),
+            SizedBox(height: 20),
+            Text(
+              '@ @ @',  //닉네임
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+            TextButton(
+              onPressed: () {
+                // 버튼이 눌렸을 때 실행할 기능
+              },
+              child:
+              Text('닉네임 수정'),
+              style: TextButton.styleFrom(
+              ),
+            ),
+            SizedBox(height: 30),
+            Divider(),
+            ListTile(title: Text('내 장소')),
+            Divider(),
+            ListTile(title: Text('내 루트')),
+            Divider(),
+            ListTile(title: Text('참여한 플로깅')),
+            Divider(),
+          ],
+        ),
       ),
       bottomNavigationBar: BottomNavigation(
         selectedIndex: 3, // MY 화면이므로 인덱스는 3

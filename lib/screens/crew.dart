@@ -3,6 +3,7 @@ import '/widgets/bottom_navigation.dart';
 import 'package:clean_way/main.dart';
 import 'route.dart';
 import 'my.dart';
+import 'crew_detail_screen.dart';
 
 class Crew {
   final String name;
@@ -48,6 +49,12 @@ class CrewScreen extends StatelessWidget {
                       Text('참여 날짜: ${crew.joinDate}', style: TextStyle(fontSize: 14)),
                     ],
                   ),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => CrewDetailPage(crew: crew)), // 수정된 부분
+                    );
+                  },
                 );
               },
               separatorBuilder: (context, index) => Divider(),
