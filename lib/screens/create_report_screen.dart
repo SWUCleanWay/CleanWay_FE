@@ -12,6 +12,7 @@ class CreateReportScreen extends StatefulWidget {
 
 class _CreateReportScreenState extends State<CreateReportScreen> {
   String _selectedIssue = '';
+  int _selectedIssueNumber = 0;  // 이슈 번호
   File? _image;
   final ImagePicker _picker = ImagePicker();
   final TextEditingController _locationController = TextEditingController();
@@ -64,11 +65,12 @@ class _CreateReportScreenState extends State<CreateReportScreen> {
           backgroundColor: _selectedIssue == issue ? Color(0xFF588100) : Colors.white,
           foregroundColor: _selectedIssue == issue ? Colors.white : Colors.black,
           shape: StadiumBorder(),
-          padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10), // 버튼 내부 패딩 조절
+          padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
         ),
         onPressed: () {
           setState(() {
             _selectedIssue = issue;
+            _selectedIssueNumber = issue == '쓰레기' ? 1 : issue == '전단지' ? 2 : issue == '담배꽁초' ? 3 : 4;
           });
         },
         child: Text(issue),
@@ -77,46 +79,66 @@ class _CreateReportScreenState extends State<CreateReportScreen> {
   }
 
   Future<void> _uploadReport() async {
+    print('Uploading report...');  // 요청 시작 로그
+
     if (_image == null || _locationController.text.isEmpty || _selectedIssue.isEmpty) {
-      // 필수 정보가 누락되었을 때 처리
+      print('Validation failed: Some fields are empty.');  // 필드 검증 실패 로그
       return;
     }
 
+    // 임의의 값 할당
+    int reportNumber = DateTime.now().millisecondsSinceEpoch;
+    int userNumber = 1;  // 예제 사용자 번호
     String base64Image = base64Encode(_image!.readAsBytesSync());
+    String imageFileName = 'report_image_${DateTime.now().millisecondsSinceEpoch}.png';
 
-    Map<String, String> requestBody = {
-      'image': base64Image,
-      'location': _locationController.text,
-      'issue': _selectedIssue,
-      'date': DateTime.now().toString(),
+    Map<String, dynamic> requestData = {
+      "cleanReportDto": {
+        "reportNumber": reportNumber,
+        "userNumber": userNumber,
+        "keywordNumber": _selectedIssueNumber,
+        "reportDate": DateTime.now().toString()
+      },
+      "reportSpotDto": {
+        "spotNumber": 0,
+        "spotLat": 37.422,  // 예시 위도
+        "spotIng": -122.084,  // 예시 경도
+        "spotName": _locationController.text,
+        "reportNumber": reportNumber
+      },
+      "reportImgDto": {
+        "reportImgNumber": 0,
+        "reportImgUrl": base64Image,
+        "reportNumber": reportNumber,
+        "reportImgName": imageFileName
+      }
     };
+
+    print('Request data prepared.');
 
     try {
       final response = await http.post(
-        //Uri.parse('http://your-api-url/report/add'),
-        Uri.parse('https://jsonplaceholder.typicode.com/posts'),
-        headers: <String, String>{
-          'Content-Type': 'application/json; charset=UTF-8',
-        },
-        body: jsonEncode(requestBody),
+        Uri.parse('http://10.0.2.2:10000/report/add'),
+        headers: {'Content-Type': 'application/json; charset=UTF-8'},
+        body: jsonEncode(requestData),
       );
 
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        print('success');
-        Navigator.pop(context); // 현재 페이지 스택에서 제거
+      print('Request sent. Waiting for response...');
+      print('Response status code: ${response.statusCode}');
+      print('Response body: ${response.body}');
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        print('Success: Report uploaded');
+        Navigator.pop(context);
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(
-              builder: (context) => MainScreen(initialCrewSelected: false)
-          ), // 메인 화면으로 이동
+          MaterialPageRoute(builder: (context) => MainScreen(initialCrewSelected: false)),
         );
       } else {
-        // 서버에서 오류 응답을 받았을 때 처리
         print('Failed to upload report. Server responded with status code ${response.statusCode}');
       }
     } catch (e) {
-      // 네트워크 오류 등 예외 발생 시 처리
-      print('Error uploading report: $e');
+      print('Error uploading report: $e');  // 예외 발생 로그
     }
   }
 
@@ -146,9 +168,7 @@ class _CreateReportScreenState extends State<CreateReportScreen> {
                   color: Colors.grey[300],
                   border: Border.all(color: Colors.black26),
                 ),
-                child: _image != null
-                    ? Image.file(_image!, fit: BoxFit.cover)
-                    : Icon(Icons.camera_alt, color: Colors.grey[800]),
+                child: _image != null ? Image.file(_image!, fit: BoxFit.cover) : Icon(Icons.camera_alt, color: Colors.grey[800]),
               ),
             ),
             SizedBox(height: 20),
@@ -187,7 +207,7 @@ class _CreateReportScreenState extends State<CreateReportScreen> {
             foregroundColor: Colors.white,
             minimumSize: Size(double.infinity, 50),
             shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(12),
             ),
           ),
         ),
