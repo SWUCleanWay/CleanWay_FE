@@ -1,21 +1,34 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:flutter_naver_map/flutter_naver_map.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import '/widgets/location_search.dart';
+
 import 'screens/create_project_screen.dart';
 import 'screens/create_report_screen.dart';
+import 'screens/create_report_copy_screen.dart';
 import 'widgets/bottom_navigation.dart';
 import 'screens/crew.dart';
 import 'screens/route.dart';
 import 'screens/my.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();  // Flutter 바인딩 초기화
+  print('Loading environment variables...');
+  await dotenv.load();  // .env 파일 로드
+  print('Environment variables loaded.');
+  print('NGROK_URL: ${dotenv.env['NGROK_URL']}');
   runApp(const MyApp());
 }
+
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
+      String apiUrl = dotenv.env['NGROK_URL']!;
     return MaterialApp(
       title: 'CleanWay',
       theme: ThemeData(
@@ -25,23 +38,6 @@ class MyApp extends StatelessWidget {
       home: const MainScreen(),
     );
   }
-}
-
-// 글 데이터 클래스
-class Post {
-  final String title;
-  final String date;
-  final String location;
-  final String issue;
-  final String imageUrl;
-
-  Post({
-    required this.title,
-    required this.date,
-    required this.location,
-    required this.issue,
-    required this.imageUrl,
-  });
 }
 
 class MainScreen extends StatefulWidget {
@@ -54,32 +50,46 @@ class MainScreen extends StatefulWidget {
 }
 
 class _MainScreenState extends State<MainScreen> {
-  late bool _isCrewPostSelected;  // 상태를 late로 선언
+  late bool _isCrewPostSelected;
+  int _selectedIndex = 0;
+  List<Map<String, dynamic>> mockCrewData = [
+    {'title': '크루 1', 'user':'user1', 'date': '2024-XX-XX', 'capacity':'0/5'},
+    {'title': '크루 2', 'user':'user1', 'date': '2024-XX-XX', 'capacity':'3/5'},
+    {'title': '크루 3', 'user':'user1', 'date': '2024-XX-XX', 'capacity':'1/5'},
+  ];
+  List<Map<String, dynamic>> _reportData = [];
 
   @override
   void initState() {
     super.initState();
-    _isCrewPostSelected = widget.initialCrewSelected;  // 초기 상태 설정
+    _isCrewPostSelected = widget.initialCrewSelected;
+    fetchReports();
   }
 
-  int _selectedIndex = 0;
-  //bool _isCrewPostSelected = true;
+  Future<void> fetchReports() async {
+    String apiUrl = dotenv.env['NGROK_URL'] ?? 'http://10.0.2.2';  // .env 파일에서 URL 읽기
+    var url = Uri.parse('https://c09e-1-231-40-227.ngrok-free.app/report/list');  // URL 구성
+    try {
+      var response = await http.get(url);
+      if (response.statusCode == 200) {
+        var data = jsonDecode(utf8.decode(response.bodyBytes)) as List;
+        setState(() {
+          _reportData = data.map((item) => {
+            'location': item['spotName'],
+            'date': item['reportDate'],
+            'issue': item['keywordName']
+          }).toList();
+        });
+      } else {
+        throw Exception('Failed to load report data');
+      }
+    } catch (e) {
+      print('API 호출 중 에러 발생: $e');
+    }
+  }
 
-  // mock data list
-  final List<Map<String, dynamic>>  mockCrewData = [
-    {'title': '크루 1', 'user':'user1', 'date': '2024-XX-XX', 'capacity':'0/5'},
-    {'title': '크루 2', 'user':'user1', 'date': '2024-XX-XX', 'capacity':'3/5'},
-    {'title': '크루 3', 'user':'user1', 'date': '2024-XX-XX', 'capacity':'1/5'},
-    // ... 더 많은 데이터를 추가할 수 있습니다.
-  ];
-  final List<Map<String, dynamic>> mockReportData = [
-    {'location': '장소 1', 'date': '2024-XX-XX', 'issue': '문제점 1'},
-    {'location': '장소 2', 'date': '2024-XX-XX', 'issue': '문제점 2'},
-    {'location': '장소 3', 'date': '2024-XX-XX', 'issue': '문제점 3'},
-    // ... 더 많은 데이터를 추가할 수 있습니다.
-  ];
 
-  List<Map<String, dynamic>> get _currentList => _isCrewPostSelected ? mockCrewData : mockReportData;
+  List<Map<String, dynamic>> get _currentList => _isCrewPostSelected ? mockCrewData : _reportData;
 
   void _onItemSelected(int index) {
     setState(() {
@@ -184,85 +194,46 @@ class _MainScreenState extends State<MainScreen> {
           ),
           Expanded(
             child: ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 20.0),
               itemCount: _currentList.length,
               itemBuilder: (context, index) {
                 var post = _currentList[index];
+                // 조건에 따라 다른 ListTile 구조를 반환
                 if (_isCrewPostSelected) {
-                  // 크루 모집 글 카드
-                  return GestureDetector(
-                    onTap: () {
-                      // TODO: 여기에 상세 페이지로의 경로를 설정하면 됩니다.
-                    },
-                    child: Card(
-                      margin: const EdgeInsets.symmetric(vertical: 10),
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            SizedBox(height: 8),
-                            Text(post['title'], style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                            SizedBox(height: 5),
-                            Text('${post['user']}', style: TextStyle(fontSize: 14)),
-                            SizedBox(height: 5),
-                            Text('${post['date']}', style: TextStyle(fontSize: 14)),
-                            SizedBox(height: 5),
-                            Text('모집 인원: ${post['capacity']}', style: TextStyle(fontSize: 14)),
-                          ],
-                        ),
+                  // 크루 모집 글
+                  return Card(
+                    margin: const EdgeInsets.symmetric(vertical: 10),
+                    child: ListTile(
+                      title: Text(post['title']),
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: <Widget>[
+                          Text('작성자: ${post['user']}'),
+                          Text('작성일: ${post['date']}'),
+                          Text('모집인원: ${post['capacity']}'),
+                        ],
                       ),
                     ),
                   );
                 } else {
+                  // 제보 글
                   return Card(
                     margin: const EdgeInsets.symmetric(vertical: 10),
-                    child: AspectRatio(
-                      aspectRatio: 4 / 3,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: Colors.grey[200], // 임시 배경색
-                        ),
-                        child: Stack(
-                          children: [
-                            // 포스트 내용
-                            Positioned(
-                              left: 16,
-                              top: 16,
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(post['date'],
-                                      style: TextStyle(fontSize: 16)),
-                                  SizedBox(height: 8),
-                                  Text(post['location'],
-                                      style: TextStyle(fontSize: 16)),
-                                  SizedBox(height: 8),
-                                  Text(post['issue'],
-                                      style: TextStyle(fontSize: 16)),
-                                ],
-                              ),
-                            ),
-                            // 즐겨찾기 버튼
-                            Positioned(
-                              right: 16,
-                              bottom: 16,
-                              child: IconButton(
-                                icon: const Icon(Icons.favorite_border),
-                                onPressed: () {
-                                  // 즐겨찾기 기능 구현
-                                },
-                              ),
-                            ),
-                          ],
-                        ),
+                    child: ListTile(
+                      title: Text(post['location']),  // spotName을 타이틀로 사용
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: <Widget>[
+                          Text('날짜: ${post['date']}'),  // 날짜 정보를 먼저 표시
+                          Text('문제상황: ${post['issue']}'),  // 문제상황 정보를 그 아래 표시
+                        ],
                       ),
                     ),
                   );
-                };
+                }
               },
             ),
-          ),
+          )
+
         ],
       ),
       floatingActionButton: Builder(
@@ -324,5 +295,3 @@ class _MainScreenState extends State<MainScreen> {
     );
   }
 }
-
-
