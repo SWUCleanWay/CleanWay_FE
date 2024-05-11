@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'package:flutter_naver_map/flutter_naver_map.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import '/widgets/location_search.dart';
-
+import 'widgets/location_search.dart';
 import 'screens/create_project_screen.dart';
 import 'screens/create_report_screen.dart';
 import 'screens/create_report_copy_screen.dart';
@@ -13,29 +11,42 @@ import 'screens/crew.dart';
 import 'screens/route.dart';
 import 'screens/my.dart';
 
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();  // Flutter 바인딩 초기화
-  print('Loading environment variables...');
-  await dotenv.load();  // .env 파일 로드
-  print('Environment variables loaded.');
-  print('NGROK_URL: ${dotenv.env['NGROK_URL']}');
+void main() {
+  //WidgetsFlutterBinding.ensureInitialized();
+  //await dotenv.load();
+  //print("Environment variables are loaded.");
   runApp(const MyApp());
 }
 
-
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  const MyApp({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-      String apiUrl = dotenv.env['NGROK_URL']!;
-    return MaterialApp(
-      title: 'CleanWay',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Color(0xFF588100)),
-        useMaterial3: true,
-      ),
-      home: const MainScreen(),
+    return FutureBuilder(
+      future: dotenv.load(fileName: ".env"),
+      builder: (BuildContext context, AsyncSnapshot<void> snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          // Return a loading indicator if environment variables are being loaded
+          return MaterialApp(
+            home: Scaffold(
+              body: Center(
+                child: CircularProgressIndicator(),
+              ),
+            ),
+          );
+        } else {
+          // Once environment variables are loaded, return the MaterialApp
+          return MaterialApp(
+            title: 'CleanWay',
+            theme: ThemeData(
+              colorScheme: ColorScheme.fromSeed(seedColor: Color(0xFF588100)),
+              useMaterial3: true,
+            ),
+            home: const MainScreen(),
+          );
+        }
+      },
     );
   }
 }
@@ -67,7 +78,7 @@ class _MainScreenState extends State<MainScreen> {
   }
 
   Future<void> fetchReports() async {
-    String apiUrl = dotenv.env['NGROK_URL'] ?? 'http://10.0.2.2';  // .env 파일에서 URL 읽기
+    //String apiUrl = dotenv.env['NGROK_URL'] ?? 'http://10.0.2.2';  // .env 파일에서 URL 읽기
     var url = Uri.parse('https://c09e-1-231-40-227.ngrok-free.app/report/list');  // URL 구성
     try {
       var response = await http.get(url);
@@ -223,8 +234,17 @@ class _MainScreenState extends State<MainScreen> {
                       subtitle: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: <Widget>[
-                          Text('날짜: ${post['date']}'),  // 날짜 정보를 먼저 표시
-                          Text('문제상황: ${post['issue']}'),  // 문제상황 정보를 그 아래 표시
+                          Text('${post['date']}'),  // 날짜 정보를 먼저 표시
+                          SizedBox(height: 5),
+                          Container(  // Container로 감싸고 BoxDecoration 설정
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(15),  // 둥근 테두리 설정
+                              border: Border.all(color: Colors.grey),  // 경계선 설정
+                              // 다른 필요한 스타일들도 추가할 수 있습니다.
+                            ),
+                            padding: EdgeInsets.all(8),  // 내부 여백 설정
+                            child: Text(post['issue']),  // 문제상황 정보를 둥근 테두리로 감싸서 표시
+                          ),
                         ],
                       ),
                     ),
