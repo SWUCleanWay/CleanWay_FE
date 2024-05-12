@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
 
 import 'screens/create_project_screen.dart';
@@ -13,10 +14,10 @@ import 'screens/crew.dart';
 import 'screens/route.dart';
 import 'screens/my.dart';
 
-/*void main() async {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   try {
-    await dotenv.load(); // .env 파일 로드
+    await dotenv.load(fileName: ".env"); // .env 파일 로드
     print("clientId: ${dotenv.env['NAVER_MAP_CLIENT_ID']}");
     await NaverMapSdk.instance.initialize(
         clientId: dotenv.env['NAVER_MAP_CLIENT_ID']!, // .env에서 클라이언트 ID 사용
@@ -29,13 +30,19 @@ import 'screens/my.dart';
     print('환경변수 로드 실패: $e');
     runApp(ErrorApp()); // 오류 발생 시 보여줄 대체 앱
   }
-}*/
-
-void main() {
-  runApp(const MyApp());
 }
 
-/*class ErrorApp extends StatelessWidget {
+Future<void> requestLocationPermission() async {
+  var status = await Permission.location.status;
+  if (!status.isGranted) {
+    Map<Permission, PermissionStatus> statuses = await [
+      Permission.location,
+    ].request();
+    print(statuses[Permission.location]);
+  }
+}
+
+class ErrorApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -46,7 +53,7 @@ void main() {
       ),
     );
   }
-}*/
+}
 
 class MyApp extends StatelessWidget {
   const MyApp({Key? key}) : super(key: key);
@@ -109,7 +116,7 @@ class _MainScreenState extends State<MainScreen> {
 
   Future<void> fetchReports() async {
     //String apiUrl = dotenv.env['NGROK_URL'] ?? 'http://10.0.2.2';  // .env 파일에서 URL 읽기
-    var url = Uri.parse('https://c09e-1-231-40-227.ngrok-free.app/report/list');  // URL 구성
+    var url = Uri.parse('${dotenv.env['NGROK_URL']}/report/list');  // URL 구성
     try {
       var response = await http.get(url);
       if (response.statusCode == 200) {
@@ -329,7 +336,7 @@ class _MainScreenState extends State<MainScreen> {
                         onTap: () {
                           Navigator.pop(context);
                           Navigator.of(context).push(
-                            MaterialPageRoute(builder: (context) => CreateReportScreen()),
+                            MaterialPageRoute(builder: (context) => CreateReportCopyScreen()),
                           );
                         },
                         child: Text('제보하기'),
