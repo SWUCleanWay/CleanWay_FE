@@ -109,12 +109,7 @@ class _CreateReportCopyScreenState extends State<CreateReportCopyScreen> {
         "spotName": _locationController.text,
         "reportNumber": reportNumber
       },
-      "reportImgDto": {
-        "reportImgNumber": 0,
-        "reportImgUrl": base64Image,
-        "reportNumber": reportNumber,
-        "reportImgName": imageFileName
-      }
+      "base64EncodedImage": base64Image
     };
 
     try {

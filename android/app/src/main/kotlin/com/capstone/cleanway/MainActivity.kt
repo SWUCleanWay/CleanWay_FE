@@ -1,4 +1,4 @@
-package com.example.clean_way
+package com.capstone.cleanway
 
 import io.flutter.embedding.android.FlutterActivity
 

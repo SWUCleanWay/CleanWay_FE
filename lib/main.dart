@@ -2,21 +2,51 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'widgets/location_search.dart';
+import 'package:flutter_naver_map/flutter_naver_map.dart';
+
 import 'screens/create_project_screen.dart';
 import 'screens/create_report_screen.dart';
 import 'screens/create_report_copy_screen.dart';
+import 'screens/project_detail_screen.dart';
 import 'widgets/bottom_navigation.dart';
 import 'screens/crew.dart';
 import 'screens/route.dart';
 import 'screens/my.dart';
 
+/*void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  try {
+    await dotenv.load(); // .env 파일 로드
+    print("clientId: ${dotenv.env['NAVER_MAP_CLIENT_ID']}");
+    await NaverMapSdk.instance.initialize(
+        clientId: dotenv.env['NAVER_MAP_CLIENT_ID']!, // .env에서 클라이언트 ID 사용
+        onAuthFailed: (e) {
+          print("네이버 맵 인증오류: $e");
+        }
+    );
+    runApp(const MyApp());
+  } catch (e) {
+    print('환경변수 로드 실패: $e');
+    runApp(ErrorApp()); // 오류 발생 시 보여줄 대체 앱
+  }
+}*/
+
 void main() {
-  //WidgetsFlutterBinding.ensureInitialized();
-  //await dotenv.load();
-  //print("Environment variables are loaded.");
   runApp(const MyApp());
 }
+
+/*class ErrorApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      home: Scaffold(
+        body: Center(
+          child: Text('환경변수 로드 실패'),
+        ),
+      ),
+    );
+  }
+}*/
 
 class MyApp extends StatelessWidget {
   const MyApp({Key? key}) : super(key: key);
@@ -83,6 +113,7 @@ class _MainScreenState extends State<MainScreen> {
     try {
       var response = await http.get(url);
       if (response.statusCode == 200) {
+        print('success');
         var data = jsonDecode(utf8.decode(response.bodyBytes)) as List;
         setState(() {
           _reportData = data.map((item) => {
@@ -214,6 +245,13 @@ class _MainScreenState extends State<MainScreen> {
                   return Card(
                     margin: const EdgeInsets.symmetric(vertical: 10),
                     child: ListTile(
+                      onTap: () {
+                        // Navigator.push를 사용하여 project_detail_screen.dart 페이지로 이동
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => ProjectDetailScreen()),
+                        );
+                      },
                       title: Text(post['title']),
                       subtitle: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
