@@ -112,17 +112,18 @@ class _MainScreenState extends State<MainScreen> {
   }
 
   Future<void> fetchReports() async {
-    var url = Uri.parse('${dotenv.env['NGROK_URL']}/report/list');
+    String? baseUrl = dotenv.env['NGROK_URL'];
+
+    var url = Uri.parse('${baseUrl}/report/list');
     try {
+      print(baseUrl);
       var response = await http.get(url);
       if (response.statusCode == 200) {
         var data = jsonDecode(utf8.decode(response.bodyBytes)) as List;
         setState(() {
           _reportData = data.map<Map<String, dynamic>>((item) {
             var imageUrl = item['imageUrl'] as String?;
-            if (imageUrl != null && !imageUrl.startsWith('http')) {
-              imageUrl = '${dotenv.env['NGROK_URL']}$imageUrl';
-            }
+              imageUrl = '$baseUrl$imageUrl';
             return {
               'location': item['spotName'],
               'date': item['reportDate'],
@@ -269,6 +270,7 @@ class _MainScreenState extends State<MainScreen> {
           ),
           Expanded(
             child: ListView.builder(
+              padding: const EdgeInsets.all(10.0),
               itemCount: _currentList.length,
               itemBuilder: (context, index) {
                 var post = _currentList[index];
@@ -315,19 +317,28 @@ class _MainScreenState extends State<MainScreen> {
                     child: ListTile(
                       title: Text(
                         post['location'],
-                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 20),
+                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 25),
                       ),
                       subtitle: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: <Widget>[
+                          SizedBox(height: 10,),
                           Text(
                             post['date'],
-                            style: TextStyle(color: Colors.white),
+                            style: TextStyle(color: Colors.white, fontSize: 20),
                           ),
-                          Text(
-                            post['issue'],
-                            style: TextStyle(color: Colors.white),
-                          ),
+                          SizedBox(height: 10,),
+                          Container(
+                            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 5), // 텍스트 주변의 패딩
+                            decoration: BoxDecoration(
+                              border: Border.all(color: Colors.white),
+                              borderRadius: BorderRadius.circular(20), // 둥근 모서리의 반경
+                            ),
+                            child: Text(
+                              post['issue'],
+                              style: TextStyle(color: Colors.white, fontSize: 18),
+                            ),
+                          )
                         ],
                       ),
                     ),
@@ -374,7 +385,7 @@ class _MainScreenState extends State<MainScreen> {
                         onTap: () {
                           Navigator.pop(context);
                           Navigator.of(context).push(
-                            MaterialPageRoute(builder: (context) => CreateReportScreen()),
+                            MaterialPageRoute(builder: (context) => CreateReportCopyScreen()),
                           );
                         },
                         child: Text('제보하기'),
