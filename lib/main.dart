@@ -100,11 +100,7 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   late bool _isCrewPostSelected;
   int _selectedIndex = 0;
-  List<Map<String, dynamic>> mockCrewData = [
-    {'title': '크루 1', 'user':'user1', 'date': '2024-XX-XX', 'capacity':'0/5'},
-    {'title': '크루 2', 'user':'user1', 'date': '2024-XX-XX', 'capacity':'3/5'},
-    {'title': '크루 3', 'user':'user1', 'date': '2024-XX-XX', 'capacity':'1/5'},
-  ];
+  List<Map<String, dynamic>> _crewData = [];
   List<Map<String, dynamic>> _reportData = [];
 
   @override
@@ -112,21 +108,27 @@ class _MainScreenState extends State<MainScreen> {
     super.initState();
     _isCrewPostSelected = widget.initialCrewSelected;
     fetchReports();
+    fetchCrews();
   }
 
   Future<void> fetchReports() async {
-    //String apiUrl = dotenv.env['NGROK_URL'] ?? 'http://10.0.2.2';  // .env 파일에서 URL 읽기
-    var url = Uri.parse('${dotenv.env['NGROK_URL']}/report/list');  // URL 구성
+    var url = Uri.parse('${dotenv.env['NGROK_URL']}/report/list');
     try {
       var response = await http.get(url);
       if (response.statusCode == 200) {
-        print('success');
         var data = jsonDecode(utf8.decode(response.bodyBytes)) as List;
         setState(() {
-          _reportData = data.map((item) => {
-            'location': item['spotName'],
-            'date': item['reportDate'],
-            'issue': item['keywordName']
+          _reportData = data.map<Map<String, dynamic>>((item) {
+            var imageUrl = item['imageUrl'] as String?;
+            if (imageUrl != null && !imageUrl.startsWith('http')) {
+              imageUrl = '${dotenv.env['NGROK_URL']}$imageUrl';
+            }
+            return {
+              'location': item['spotName'],
+              'date': item['reportDate'],
+              'issue': item['keywordName'],
+              'imageUrl': imageUrl,
+            };
           }).toList();
         });
       } else {
@@ -138,7 +140,31 @@ class _MainScreenState extends State<MainScreen> {
   }
 
 
-  List<Map<String, dynamic>> get _currentList => _isCrewPostSelected ? mockCrewData : _reportData;
+  Future<void> fetchCrews() async {
+    var url = Uri.parse('${dotenv.env['NGROK_URL']}/crew/list');
+    try {
+      var response = await http.get(url);
+      if (response.statusCode == 200) {
+        print('success');
+        var data = jsonDecode(utf8.decode(response.bodyBytes)) as List;
+        setState(() {
+          _crewData = data.map((item) => {
+            'title': item['crewName'],
+            'date': item['crewWriteTime'],
+            'members': item['memberCount'],
+            'capacity': item['crewRecruitment'],
+          }).toList();
+        });
+      } else {
+        throw Exception('Failed to load report data');
+      }
+    } catch (e) {
+      print('API 호출 중 에러 발생: $e');
+    }
+  }
+
+
+  List<Map<String, dynamic>> get _currentList => _isCrewPostSelected ? _crewData : _reportData;
 
   void _onItemSelected(int index) {
     setState(() {
@@ -263,32 +289,44 @@ class _MainScreenState extends State<MainScreen> {
                       subtitle: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: <Widget>[
-                          Text('작성자: ${post['user']}'),
                           Text('작성일: ${post['date']}'),
-                          Text('모집인원: ${post['capacity']}'),
+                          Text('모집인원: ${post['members']}/${post['capacity']} 명'),
                         ],
                       ),
                     ),
                   );
                 } else {
                   // 제보 글
-                  return Card(
+                  return Container(
                     margin: const EdgeInsets.symmetric(vertical: 10),
+                    height: 200,
+                    decoration: BoxDecoration(
+                      image: post['imageUrl'] != null ? DecorationImage(
+                        image: NetworkImage(post['imageUrl']),
+                        fit: BoxFit.cover,
+                        colorFilter: ColorFilter.mode(
+                          Colors.black.withOpacity(0.6), // 배경 이미지 어둡게 처리
+                          BlendMode.darken,
+                        ),
+                      ) : null, // 이미지 URL이 없는 경우 null
+                      color: post['imageUrl'] == null ? Colors.grey[300] : null, // 이미지 URL이 없으면 회색 배경
+                      borderRadius: BorderRadius.circular(10), // 둥근 모서리
+                    ),
                     child: ListTile(
-                      title: Text(post['location']),  // spotName을 타이틀로 사용
+                      title: Text(
+                        post['location'],
+                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 20),
+                      ),
                       subtitle: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: <Widget>[
-                          Text('${post['date']}'),  // 날짜 정보를 먼저 표시
-                          SizedBox(height: 5),
-                          Container(  // Container로 감싸고 BoxDecoration 설정
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(15),  // 둥근 테두리 설정
-                              border: Border.all(color: Colors.grey),  // 경계선 설정
-                              // 다른 필요한 스타일들도 추가할 수 있습니다.
-                            ),
-                            padding: EdgeInsets.all(8),  // 내부 여백 설정
-                            child: Text(post['issue']),  // 문제상황 정보를 둥근 테두리로 감싸서 표시
+                          Text(
+                            post['date'],
+                            style: TextStyle(color: Colors.white),
+                          ),
+                          Text(
+                            post['issue'],
+                            style: TextStyle(color: Colors.white),
                           ),
                         ],
                       ),
@@ -336,7 +374,7 @@ class _MainScreenState extends State<MainScreen> {
                         onTap: () {
                           Navigator.pop(context);
                           Navigator.of(context).push(
-                            MaterialPageRoute(builder: (context) => CreateReportCopyScreen()),
+                            MaterialPageRoute(builder: (context) => CreateReportScreen()),
                           );
                         },
                         child: Text('제보하기'),
