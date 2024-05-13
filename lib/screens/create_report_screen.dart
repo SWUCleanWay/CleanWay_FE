@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '/main.dart';
 
 class CreateReportScreen extends StatefulWidget {
@@ -20,9 +21,12 @@ class _CreateReportScreenState extends State<CreateReportScreen> {
   Future<void> _pickImage(ImageSource source) async {
     final pickedFile = await _picker.pickImage(source: source);
     if (pickedFile != null) {
+      print("Image picked: ${pickedFile.path}");  // 이미지 선택 로그
       setState(() {
         _image = File(pickedFile.path);
       });
+    } else {
+      print("No image selected.");  // 이미지 선택 실패 로그
     }
   }
 
@@ -82,24 +86,23 @@ class _CreateReportScreenState extends State<CreateReportScreen> {
   }
 
   Future<void> _uploadReport() async {
-    print('Uploading report...'); // 요청 시작 로그
-
-    if (_image == null || _locationController.text.isEmpty ||
-        _selectedIssue.isEmpty) {
+    if (_image == null || _locationController.text.isEmpty || _selectedIssue.isEmpty) {
       print('Validation failed: Some fields are empty.'); // 필드 검증 실패 로그
       return;
     }
 
-    // 임의의 값 할당
-    int reportNumber = DateTime
-        .now()
-        .millisecondsSinceEpoch;
-    int userNumber = 1; // 예제 사용자 번호
-    String base64Image = base64Encode(_image!.readAsBytesSync());
-    String imageFileName = 'report_image_${DateTime
-        .now()
-        .millisecondsSinceEpoch}.png';
+    print('Image path: ${_image!.path}'); // 이미지 경로 로그
+    String base64Image;
+    try {
+      base64Image = base64Encode(await _image!.readAsBytes());
+      print("Base64 Image: $base64Image"); // Base64 인코딩 로그
+    } catch (e) {
+      print("Error encoding image: $e"); // 이미지 인코딩 에러 로그
+      return;
+    }
 
+    int reportNumber = DateTime.now().millisecondsSinceEpoch;
+    int userNumber = 1;
     Map<String, dynamic> requestData = {
       "cleanReportDto": {
         "reportNumber": reportNumber,
@@ -109,63 +112,37 @@ class _CreateReportScreenState extends State<CreateReportScreen> {
       },
       "reportSpotDto": {
         "spotNumber": 0,
-        "spotLat": 37.422, // 예시 위도
-        "spotIng": -122.084, // 예시 경도
+        "spotLat": 37.422,
+        "spotIng": -122.084,
         "spotName": _locationController.text,
         "reportNumber": reportNumber
       },
       "base64EncodedImage": base64Image
     };
 
-    print('Request data prepared.');
-
+    print('Request data prepared.'); // 요청 데이터 준비 완료 로그
+    print('Sending Request...');
     try {
       var response = await http.post(
-        Uri.parse('https://c09e-1-231-40-227.ngrok-free.app/report/add'),
+        Uri.parse('${dotenv.env['NGROK_URL']}/report/add'),
         headers: {'Content-Type': 'application/json; charset=UTF-8'},
         body: jsonEncode(requestData),
       );
-
-      print('Request sent. Waiting for response...');
-      print('Response status code: ${response.statusCode}');
-      print('Response body: ${response.body}');
+      print('Response status code: ${response.statusCode}'); // 응답 상태 코드 로그
+      print('Response body: ${response.body}'); // 응답 본문 로그
 
       if (response.statusCode >= 200 && response.statusCode < 300) {
         print('Success: Report uploaded');
         Navigator.pop(context);
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(
-              builder: (context) => MainScreen(initialCrewSelected: false)),
+          MaterialPageRoute(builder: (context) => MainScreen(initialCrewSelected: false)),
         );
-      } else if (response.statusCode == 307) {
-        // 리디렉션 URL 추출 및 재요청 로직 구현
-        Uri redirectUrl = Uri.parse(response.headers['location']!);
-        response = await http.post(
-          redirectUrl,
-          headers: {'Content-Type': 'application/json; charset=UTF-8'},
-          body: jsonEncode(requestData),
-        );
-        if (response.statusCode >= 200 && response.statusCode < 300) {
-          print('Success after redirect: Report uploaded');
-          Navigator.pop(context);
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-                builder: (context) => MainScreen(initialCrewSelected: false)),
-          );
-        } else {
-          print(
-              'Failed to upload report after redirect. Server responded with status code ${response
-                  .statusCode}');
-        }
       } else {
-        print(
-            'Failed to upload report. Server responded with status code ${response
-                .statusCode}');
+        print('Failed to upload report. Server responded with status code ${response.statusCode}');
       }
     } catch (e) {
-      print('Error uploading report: $e'); // 예외 발생 로그
+      print('Error uploading report: $e'); // 요청 전송 에러 로그
     }
   }
 

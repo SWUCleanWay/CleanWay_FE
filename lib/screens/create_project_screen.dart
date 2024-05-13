@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class CreateProjectScreen extends StatefulWidget {
   @override
@@ -65,25 +66,37 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
 
   Future<void> _registerCrew() async {
     Map<String, dynamic> registerCrewData = {
-      'crewName': crewNameController.text,
-      'startLocation': startLocationController.text,
-      'wayPoints': wayPointsControllers.map((controller) => controller.text).toList(),
-      'destination': destinationController.text,
-      'date': DateFormat('yyyy-MM-dd').format(selectedDate),
-      'time': selectedTime.format(context),
-      'capacity': int.parse(capacityController.text),
-      'description': descriptionController.text,
+      'cleanCrewDto': {
+        'userNumber': 0,
+        'crewName': crewNameController.text,
+        'crewContent': descriptionController.text,
+        'crewRecruitment': int.parse(capacityController.text),
+      },
+      'cleanCrewProjectDto': {
+        'crewProjectNumber': 0,
+        'crewNumber': 0,
+        'projectWriteTime': '',
+        'projectContent': '',
+        'projectRecruitment': 0,
+        'projectDate': DateFormat('yyyy-MM-dd').format(selectedDate),
+        'projectTime': selectedTime.format(context),
+        'projectRoleNumber': 0,
+        'userNumber': 0,
+        'projectSLng': 0,
+        'projectSLat': 0,
+        'projectVLng': 0,
+        'projectVLat': 0,
+        'projectDLng': 0,
+        'projectDLat': 0,
+      }
     };
 
     String jsonBody = json.encode(registerCrewData);
 
     try {
       http.Response response = await http.post(
-        //Uri.parse('https://your-api-url/crew/add'),
-        Uri.parse('https://jsonplaceholder.typicode.com/posts'),
-        headers: <String, String>{
-          'Content-Type': 'application/json; charset=UTF-8',
-        },
+        Uri.parse('${dotenv.env['NGROK_URL']}/report/add'),
+        headers: {'Content-Type': 'application/json; charset=UTF-8'},
         body: jsonBody,
       );
 
@@ -91,12 +104,13 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
         print("success");
         //상세페이지로 이동
       } else {
-        print('Failed to register crew: ${response.statusCode}');
+        print('Failed to register crew: ${response.statusCode} error');
       }
     } catch (e) {
       print('Error occurred: $e');
     }
   }
+
 
   @override
   Widget build(BuildContext context) {
