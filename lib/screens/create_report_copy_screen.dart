@@ -60,6 +60,21 @@ class _CreateReportCopyScreenState extends State<CreateReportCopyScreen> {
     );
   }
 
+  void _navigateAndDisplayLocationSelection(BuildContext context) async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => LocationSearch()),
+    );
+
+    if (result != null) {
+      setState(() {
+        _locationController.text = result['spotName'];
+        _selectedLatitude = result['spotLat'];
+        _selectedLongitude = result['spotLng'];
+      });
+    }
+  }
+
   Widget issueButton(String issue) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4.0),
@@ -105,7 +120,7 @@ class _CreateReportCopyScreenState extends State<CreateReportCopyScreen> {
       "reportSpotDto": {
         "spotNumber": 0,
         "spotLat": _selectedLatitude,
-        "spotIng": _selectedLongitude,
+        "spotLng": _selectedLongitude,
         "spotName": _locationController.text,
         "reportNumber": reportNumber
       },
@@ -131,21 +146,6 @@ class _CreateReportCopyScreenState extends State<CreateReportCopyScreen> {
       }
     } catch (e) {
       print('Error uploading report: $e');
-    }
-  }
-
-  void _navigateAndDisplayLocationSelection(BuildContext context) async {
-    final result = await Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => LocationSearch()),
-    );
-
-    if (result != null) {
-      setState(() {
-        _locationController.text = result['spotName'];
-        _selectedLatitude = result['spotLat'];
-        _selectedLongitude = result['spotIng'];
-      });
     }
   }
 
