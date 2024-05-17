@@ -13,6 +13,7 @@ class LocationSearch extends StatefulWidget {
 class _LocationSearchState extends State<LocationSearch> {
   late NaverMapController _controller;
   TextEditingController _searchController = TextEditingController();
+  Map<String, dynamic>? selectedPlace;
 
   @override
   void initState() {
@@ -60,6 +61,17 @@ class _LocationSearchState extends State<LocationSearch> {
               onSubmitted: (value) => searchLocation(value),
             ),
           ),
+          if (selectedPlace != null) // 선택 버튼 추가
+            Container(
+              width: double.infinity,
+              padding: EdgeInsets.symmetric(horizontal: 8.0),
+              child: ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context, selectedPlace); // 선택한 장소를 반환
+                },
+                child: Text("장소 선택하기"),
+              ),
+            ),
           Expanded(
             child: NaverMap(
               onMapReady: (controller) {
@@ -92,10 +104,8 @@ class _LocationSearchState extends State<LocationSearch> {
       var items = data['items'];
       if (items.isNotEmpty) {
         var item = items[0];
-        // 정수형 좌표를 실제 위도와 경도로 변환
         double lat = double.parse(item['mapy']) * 1e-7;
         double lng = double.parse(item['mapx']) * 1e-7;
-        print("위도, 경도 : $lat $lng"); // 수정된 위도와 경도 출력
         setState(() {
           _controller.updateCamera(
               NCameraUpdate.scrollAndZoomTo(target: NLatLng(lat, lng))
@@ -105,6 +115,12 @@ class _LocationSearchState extends State<LocationSearch> {
             position: NLatLng(lat, lng),
           );
           _controller.addOverlay(marker);
+
+          selectedPlace = {
+            "spotName": item['title'],
+            "spotLat": lat,
+            "spotLng": lng
+          };
         });
       }
     } else {
