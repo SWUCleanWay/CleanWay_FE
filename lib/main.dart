@@ -150,6 +150,7 @@ class _MainScreenState extends State<MainScreen> {
         var data = jsonDecode(utf8.decode(response.bodyBytes)) as List;
         setState(() {
           _crewData = data.map((item) => {
+            'crewNumber': item['crewNumber'],
             'title': item['crewName'],
             'date': item['crewWriteTime'],
             'members': item['memberCount'],
@@ -284,7 +285,7 @@ class _MainScreenState extends State<MainScreen> {
                         // Navigator.push를 사용하여 project_detail_screen.dart 페이지로 이동
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (context) => ProjectDetailScreen()),
+                          MaterialPageRoute(builder: (context) => ProjectDetailScreen(crewNumber: post['crewNumber'])),
                         );
                       },
                       title: Text(post['title']),
