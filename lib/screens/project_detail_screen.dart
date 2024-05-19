@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_naver_map/flutter_naver_map.dart';
 
 class CrewDetail {
   final String title;
@@ -14,6 +15,7 @@ class CrewDetail {
   final int participants;
   final int capacity;
   final String additionalInfo;
+  final String projectSName, projectVName, projectDName;
 
   CrewDetail({
     required this.title,
@@ -26,6 +28,9 @@ class CrewDetail {
     required this.participants,
     required this.capacity,
     required this.additionalInfo,
+    required this.projectSName,
+    required this.projectVName,
+    required this.projectDName,
   });
 
   factory CrewDetail.fromJson(Map<String, dynamic> json) {
@@ -40,6 +45,9 @@ class CrewDetail {
       participants: json['memberCount'],
       capacity: json['crewRecruitment'],
       additionalInfo: json['crewContent'],
+      projectSName: json['projectSName'],
+      projectVName: json['projectVName'],
+      projectDName: json['projectDName'],
     );
   }
 }
@@ -114,11 +122,46 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
     //return CrewDetail.fromJson(mockData);
   }
 
-  @override
+  /*Widget buildDetailLayout(CrewDetail detail) {
+    // 마커를 생성합니다.
+    final List<Marker> markers = [
+      Marker(
+        markerId: 'start',
+        position: LatLng(detail.projectSLat, detail.projectSLng),
+        captionText: '출발지: ${detail.projectSName}',
+        captionColor: Colors.black,
+        captionTextSize: 14.0,
+        captionOffset: 20,
+        icon: MarkerIcons.black,
+        alpha: 0.8,
+      ),
+      Marker(
+        markerId: 'via',
+        position: LatLng(detail.projectVLat, detail.projectVLng),
+        captionText: '경유지: ${detail.projectVName}',
+        captionColor: Colors.black,
+        captionTextSize: 14.0,
+        captionOffset: 20,
+        icon: MarkerIcons.blue,
+        alpha: 0.8,
+      ),
+      Marker(
+        markerId: 'destination',
+        position: LatLng(detail.projectDLat, detail.projectDLng),
+        captionText: '목적지: ${detail.projectDName}',
+        captionColor: Colors.black,
+        captionTextSize: 14.0,
+        captionOffset: 20,
+        icon: MarkerIcons.yellow,
+        alpha: 0.8,
+      ),
+    ];*/
+
+
+    @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Project Details'),
         actions: [
           Icon(Icons.share),
           SizedBox(width: 16),
@@ -138,6 +181,41 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
           }
           return Center(child: CircularProgressIndicator());
         },
+      ),
+      bottomNavigationBar: Container(
+        padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+        child: SafeArea(
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: () {
+                    // Implement 'Browse Around' functionality
+                  },
+                  child: Text('둘러보기'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: Theme.of(context).colorScheme.primary,
+                  ),
+                ),
+              ),
+              SizedBox(width: 10),
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: () {
+                    // Implement 'Join' functionality
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Theme.of(context).colorScheme.primary,
+                    foregroundColor: Colors.white,
+                  ),
+                  child: Text('참여하기'),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -170,7 +248,21 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
                 Divider(),
                 Text('루트', style: TextStyle(fontSize: 16.0, fontWeight: FontWeight.bold)),
                 SizedBox(height: 10),
-                Text(detail.route),
+                Text('출발지 : ${detail.projectSName}'),
+                Text('경유지 : ${detail.projectVName}'),
+                Text('목적지 : ${detail.projectDName}'),
+                SizedBox(
+                  /*height: 200,  // 지도의 높이를 설정합니다.
+                  child: NaverMap(
+                    initialCameraPosition: CameraPosition(
+                      target: LatLng(detail.projectSLat, detail.projectSLng),  // 초기 위치를 출발지로 설정합니다.
+                      zoom: 13,  // 초기 줌 레벨을 설정합니다.
+                    ),
+                    markers: markers,  // 위에서 정의한 마커 리스트를 사용합니다.
+                    onMapCreated: onMapCreated,
+                  ),*/
+                  height: 10,
+                ),
                 Divider(),
                 Text('날짜', style: TextStyle(fontSize: 16.0, fontWeight: FontWeight.bold)),
                 SizedBox(height: 10),
@@ -193,5 +285,6 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
         ],
       ),
     );
+
   }
 }

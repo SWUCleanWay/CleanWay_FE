@@ -33,8 +33,8 @@ class Crew {
 
 class CrewScreen extends StatelessWidget {
   const CrewScreen({Key? key}) : super(key: key);
-  //final int crewNumber;
-  //CrewDetailPage({required this.crewNumber});
+  /*final int crewNumber;
+  CrewDetailPage({required this.crewNumber});*/
 
   Future<List<Crew>> fetchCrews() async {
     String url = '${dotenv.env['NGROK_URL']}/crew-project/mycrew';
@@ -87,13 +87,16 @@ class CrewScreen extends StatelessWidget {
                             Text('참여 날짜: ${crew.joinDate}', style: TextStyle(fontSize: 14)),
                           ],
                         ),
+                        // 기존 CrewScreen 코드 내에 위치하는 ListView.builder 내 itemBuilder 수정 부분:
                         onTap: () {
-                          // Navigate to the crew detail page
-                          /*Navigator.push(
+                          Navigator.push(
                             context,
-                            MaterialPageRoute(builder: (context) => CrewDetailPage(crewNumber: crew.crewNumber)),
-                          );*/
+                            MaterialPageRoute(
+                              builder: (context) => CrewDetailPage(crewNumber: crew.crewNumber, crewName: crew.name),
+                            ),
+                          );
                         },
+
                       );
                     },
                     separatorBuilder: (context, index) => Divider(),

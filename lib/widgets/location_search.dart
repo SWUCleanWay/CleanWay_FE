@@ -33,6 +33,12 @@ class _LocationSearchState extends State<LocationSearch> {
     }
   }
 
+  String removeHtmlTags(String htmlString) {
+    RegExp exp = RegExp(r"<[^>]*>", multiLine: true, caseSensitive: true);
+    return htmlString.replaceAll(exp, '');
+  }
+
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -106,6 +112,7 @@ class _LocationSearchState extends State<LocationSearch> {
         var item = items[0];
         double lat = double.parse(item['mapy']) * 1e-7;
         double lng = double.parse(item['mapx']) * 1e-7;
+        String title = removeHtmlTags(item['title']);
         setState(() {
           _controller.updateCamera(
               NCameraUpdate.scrollAndZoomTo(target: NLatLng(lat, lng))
@@ -117,7 +124,7 @@ class _LocationSearchState extends State<LocationSearch> {
           _controller.addOverlay(marker);
 
           selectedPlace = {
-            "spotName": item['title'],
+            "spotName": title,
             "spotLat": lat,
             "spotLng": lng
           };
