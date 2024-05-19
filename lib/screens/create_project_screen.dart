@@ -4,6 +4,9 @@ import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
+import '/main.dart';
+import '/widgets/location_search.dart';
+
 class CreateProjectScreen extends StatefulWidget {
   @override
   _CreateProjectScreenState createState() => _CreateProjectScreenState();
@@ -23,6 +26,48 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
   String? selectedOption;
 
   bool showWaypointField = false;
+
+  Map<String, dynamic> registerCrewData = {
+    'cleanCrewDto': {
+      'userNumber': 0,
+      'crewName': '',
+      'crewContent': '',
+      'crewRecruitment': 0,
+    },
+    'cleanCrewProjectDto': {
+      'crewProjectNumber': 0,
+      'crewNumber': 0,
+      'projectWriteTime': '',
+      'projectContent': '',
+      'projectRecruitment': 0,
+      'projectDate': '',
+      'projectTime': '',
+      'projectRoleNumber': 0,
+      'userNumber': 0,
+      'projectSLng': 0,
+      'projectSLat': 0,
+      'projectVLng': '',
+      'projectVLat': '',
+      'projectDLng': 0,
+      'projectDLat': 0,
+      "projectSName": '',
+      "projectVName": '',
+      "projectDName": ''
+    }
+  };
+
+  /*void _addWayPoint() {
+    setState(() {
+      if (!showWaypointField) {
+        showWaypointField = true;
+      } else {
+        wayPointsControllers.add(TextEditingController());
+        registerCrewData['cleanCrewProjectDto']['projectVLat'].add(0.0);
+        registerCrewData['cleanCrewProjectDto']['projectVLng'].add(0.0);
+        registerCrewData['cleanCrewProjectDto']['projectVName'].add('');
+      }
+    });
+  }*/
 
   void _addWayPoint() {
     setState(() {
@@ -64,6 +109,43 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
     }
   }
 
+  // 각 입력 필드에 대한 탭 처리 로직
+  void _navigateAndDisplaySelection(BuildContext context, TextEditingController controller, String type, {int? index}) async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => LocationSearch()),
+    );
+
+    if (result != null) {
+      setState(() {
+        controller.text = result['spotName'];
+        switch (type) {
+          case 'start':
+            registerCrewData['cleanCrewProjectDto']['projectSLat'] = result['spotLat'];
+            registerCrewData['cleanCrewProjectDto']['projectSLng'] = result['spotLng'];
+            registerCrewData['cleanCrewProjectDto']['projectSName'] = result['spotName'];
+            break;
+          case 'via':
+            registerCrewData['cleanCrewProjectDto']['projectVLat'] = result['spotLat'];
+            registerCrewData['cleanCrewProjectDto']['projectVLng'] = result['spotLng'];
+            registerCrewData['cleanCrewProjectDto']['projectVName'] = result['spotName'];
+            break;
+            /*if (index != null) {  // Check if index is provided
+              registerCrewData['cleanCrewProjectDto']['projectVLat'][index] = result['spotLat'];
+              registerCrewData['cleanCrewProjectDto']['projectVLng'][index] = result['spotLng'];
+              registerCrewData['cleanCrewProjectDto']['projectVName'][index] = result['spotName'];
+            }
+            break;*/
+          case 'destination':
+            registerCrewData['cleanCrewProjectDto']['projectDLat'] = result['spotLat'];
+            registerCrewData['cleanCrewProjectDto']['projectDLng'] = result['spotLng'];
+            registerCrewData['cleanCrewProjectDto']['projectDName'] = result['spotName'];
+            break;
+        }
+      });
+    }
+  }
+
   Future<void> _registerCrew() async {
     Map<String, dynamic> registerCrewData = {
       'cleanCrewDto': {
@@ -88,21 +170,29 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
         'projectVLat': 0,
         'projectDLng': 0,
         'projectDLat': 0,
+        "projectSName": '',
+        "projectVName": '',
+        "projectDName": ''
       }
     };
 
     String jsonBody = json.encode(registerCrewData);
 
+
     try {
       http.Response response = await http.post(
-        Uri.parse('${dotenv.env['NGROK_URL']}/report/add'),
+        Uri.parse('${dotenv.env['NGROK_URL']}/crew/add'),
         headers: {'Content-Type': 'application/json; charset=UTF-8'},
         body: jsonBody,
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         print("success");
-        //상세페이지로 이동
+        Navigator.pop(context);
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => MainScreen(initialCrewSelected: true)),
+        );
       } else {
         print('Failed to register crew: ${response.statusCode} error');
       }
@@ -123,6 +213,7 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
             labelText: '출발지',
             border: OutlineInputBorder(),
           ),
+          onTap: () => _navigateAndDisplaySelection(context, startLocationController, 'start'),
         ),
         SizedBox(height: 10),
         if (showWaypointField) ...[
@@ -138,6 +229,7 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
                         labelText: '경유지',
                         border: OutlineInputBorder(),
                       ),
+                      onTap: () => _navigateAndDisplaySelection(context, wayPointsControllers[index], 'via', index: index),
                     ),
                   ),
                 ),
@@ -150,6 +242,7 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
           }).toList(),
           SizedBox(height: 10),
         ],
+
         TextButton.icon(
           icon: Icon(Icons.add),
           label: Text('경유지 추가'),
@@ -162,6 +255,7 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
             labelText: '목적지',
             border: OutlineInputBorder(),
           ),
+          onTap: () => _navigateAndDisplaySelection(context, destinationController, 'destination'),
         ),
         SizedBox(height: 20),
       ];
