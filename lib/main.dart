@@ -282,7 +282,6 @@ class _MainScreenState extends State<MainScreen> {
                     margin: const EdgeInsets.symmetric(vertical: 10),
                     child: ListTile(
                       onTap: () {
-                        // Navigator.push를 사용하여 project_detail_screen.dart 페이지로 이동
                         Navigator.push(
                           context,
                           MaterialPageRoute(builder: (context) => ProjectDetailScreen(crewNumber: post['crewNumber'])),

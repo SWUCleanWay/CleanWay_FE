@@ -5,6 +5,7 @@ import 'route.dart';
 import 'my.dart';
 import 'crew_detail_screen.dart';
 import 'package:http/http.dart' as http;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'dart:convert';
 
 class Crew {
@@ -36,41 +37,23 @@ class CrewScreen extends StatelessWidget {
   //CrewDetailPage({required this.crewNumber});
 
   Future<List<Crew>> fetchCrews() async {
-    // Uncomment below to fetch data from the server
-    /*
-    final response = await http.get(Uri.parse('https://your-server.com/crew-project/mycrew'));
+    String url = '${dotenv.env['NGROK_URL']}/crew-project/mycrew';
 
-    if (response.statusCode == 200) {
-      List<dynamic> crewsJson = json.decode(response.body);
-      return crewsJson.map((json) => Crew.fromJson(json)).toList();
-    } else {
-      throw Exception('Failed to load crews');
+    try {
+      var response = await http.get(Uri.parse(url));
+      print('Response Status: ${response.statusCode}');  // 상태 코드 출력
+
+      if (response.statusCode == 200) {
+        List<dynamic> crewsJson = json.decode(utf8.decode(response.bodyBytes));
+        return crewsJson.map((json) => Crew.fromJson(json)).toList();
+      } else {
+        print('Failed to load crews with status code: ${response.statusCode}');
+        throw Exception('Failed to load crews');
+      }
+    } catch (e) {
+      print('Error fetching crews: $e');  // 예외 발생시 예외 내용 출력
+      throw Exception('Error fetching crews: $e');
     }
-    */
-    // Using mock data since the server is not available
-    List<Crew> mockCrews = [
-      Crew.fromJson({
-        "crewNumber": 1,
-        "userNumber": 1,
-        "crewName": "토끼네 플로깅",
-        "crewRecruitment": 10,
-        "crewRoleNumber": 2,
-        "memberCount": 3,
-        "userNickname": "강아지",
-        "crewJoinDate": "2024-05-14 00:00:00"
-      }),
-      Crew.fromJson({
-        "crewNumber": 2,
-        "userNumber": 1,
-        "crewName": "바오패밀리",
-        "crewRecruitment": 15,
-        "crewRoleNumber": 2,
-        "memberCount": 3,
-        "userNickname": "강아지",
-        "crewJoinDate": "2024-05-14 00:00:00"
-      }),
-    ];
-    return Future.delayed(Duration(seconds: 1), () => mockCrews);
   }
 
   @override
