@@ -44,12 +44,12 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
       'projectTime': '',
       'projectRoleNumber': 0,
       'userNumber': 0,
-      'projectSLng': 0,
-      'projectSLat': 0,
-      'projectVLng': '',
-      'projectVLat': '',
-      'projectDLng': 0,
-      'projectDLat': 0,
+      'projectSLng': 0.0,
+      'projectSLat': 0.0,
+      'projectVLng': 0.0,
+      'projectVLat': 0.0,
+      'projectDLng': 0.0,
+      'projectDLat': 0.0,
       "projectSName": '',
       "projectVName": '',
       "projectDName": ''
@@ -109,7 +109,6 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
     }
   }
 
-  // 각 입력 필드에 대한 탭 처리 로직
   void _navigateAndDisplaySelection(BuildContext context, TextEditingController controller, String type, {int? index}) async {
     final result = await Navigator.push(
       context,
@@ -119,65 +118,23 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
     if (result != null) {
       setState(() {
         controller.text = result['spotName'];
-        switch (type) {
-          case 'start':
-            registerCrewData['cleanCrewProjectDto']['projectSLat'] = result['spotLat'];
-            registerCrewData['cleanCrewProjectDto']['projectSLng'] = result['spotLng'];
-            registerCrewData['cleanCrewProjectDto']['projectSName'] = result['spotName'];
-            break;
-          case 'via':
-            registerCrewData['cleanCrewProjectDto']['projectVLat'] = result['spotLat'];
-            registerCrewData['cleanCrewProjectDto']['projectVLng'] = result['spotLng'];
-            registerCrewData['cleanCrewProjectDto']['projectVName'] = result['spotName'];
-            break;
-            /*if (index != null) {  // Check if index is provided
-              registerCrewData['cleanCrewProjectDto']['projectVLat'][index] = result['spotLat'];
-              registerCrewData['cleanCrewProjectDto']['projectVLng'][index] = result['spotLng'];
-              registerCrewData['cleanCrewProjectDto']['projectVName'][index] = result['spotName'];
-            }
-            break;*/
-          case 'destination':
-            registerCrewData['cleanCrewProjectDto']['projectDLat'] = result['spotLat'];
-            registerCrewData['cleanCrewProjectDto']['projectDLng'] = result['spotLng'];
-            registerCrewData['cleanCrewProjectDto']['projectDName'] = result['spotName'];
-            break;
+        var projectData = registerCrewData['cleanCrewProjectDto'];
+        if (type == 'S' || type == 'V' || type == 'D') {
+          projectData['project${type}Lat'] = result['spotLat'];
+          projectData['project${type}Lng'] = result['spotLng'];
+          projectData['project${type}Name'] = result['spotName'];
+        } else {
+          print('weird');
+          }
         }
-      });
+      );
     }
   }
 
+
   Future<void> _registerCrew() async {
-    Map<String, dynamic> registerCrewData = {
-      'cleanCrewDto': {
-        'userNumber': 0,
-        'crewName': crewNameController.text,
-        'crewContent': descriptionController.text,
-        'crewRecruitment': int.parse(capacityController.text),
-      },
-      'cleanCrewProjectDto': {
-        'crewProjectNumber': 0,
-        'crewNumber': 0,
-        'projectWriteTime': '',
-        'projectContent': '',
-        'projectRecruitment': 0,
-        'projectDate': DateFormat('yyyy-MM-dd').format(selectedDate),
-        'projectTime': selectedTime.format(context),
-        'projectRoleNumber': 0,
-        'userNumber': 0,
-        'projectSLng': 0,
-        'projectSLat': 0,
-        'projectVLng': 0,
-        'projectVLat': 0,
-        'projectDLng': 0,
-        'projectDLat': 0,
-        "projectSName": '',
-        "projectVName": '',
-        "projectDName": ''
-      }
-    };
-
     String jsonBody = json.encode(registerCrewData);
-
+    print("Sending data: $jsonBody");
 
     try {
       http.Response response = await http.post(
@@ -188,6 +145,7 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         print("success");
+        /*print(jsonBody);*/
         Navigator.pop(context);
         Navigator.pushReplacement(
           context,
@@ -213,7 +171,7 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
             labelText: '출발지',
             border: OutlineInputBorder(),
           ),
-          onTap: () => _navigateAndDisplaySelection(context, startLocationController, 'start'),
+          onTap: () => _navigateAndDisplaySelection(context, startLocationController, 'S'),
         ),
         SizedBox(height: 10),
         if (showWaypointField) ...[
@@ -224,12 +182,12 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
                   child: Padding(
                     padding: const EdgeInsets.only(top: 8.0),
                     child: TextField(
-                      controller: wayPointsControllers[index],
+                      controller: wayPointsControllers[0],
                       decoration: InputDecoration(
                         labelText: '경유지',
                         border: OutlineInputBorder(),
                       ),
-                      onTap: () => _navigateAndDisplaySelection(context, wayPointsControllers[index], 'via', index: index),
+                      onTap: () => _navigateAndDisplaySelection(context, wayPointsControllers[0], 'V'),
                     ),
                   ),
                 ),
@@ -255,7 +213,7 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
             labelText: '목적지',
             border: OutlineInputBorder(),
           ),
-          onTap: () => _navigateAndDisplaySelection(context, destinationController, 'destination'),
+          onTap: () => _navigateAndDisplaySelection(context, destinationController, 'D'),
         ),
         SizedBox(height: 20),
       ];
