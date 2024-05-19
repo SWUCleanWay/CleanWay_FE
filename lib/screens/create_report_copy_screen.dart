@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
 import '/main.dart';
 import '/widgets/location_search.dart';
@@ -129,7 +130,7 @@ class _CreateReportCopyScreenState extends State<CreateReportCopyScreen> {
 
     try {
       final response = await http.post(
-        Uri.parse('http://10.0.2.2:10000/report/add'),
+        Uri.parse('${dotenv.env['NGROK_URL']}/report/add'),
         headers: {'Content-Type': 'application/json; charset=UTF-8'},
         body: jsonEncode(requestData),
       );

@@ -64,7 +64,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
 
   Future<CrewDetail> fetchCrewDetail() async {
     // Mock data를 사용하여 CrewDetail 객체 생성
-    var mockData = {
+    /*var mockData = {
       "crewNumber": 1,
       "userNumber": 1,
       "crewName": "크루AAA",
@@ -86,18 +86,32 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
       "projectDName": "목적지",
       "memberCount": 0,
       "userNickname": "user1"
-    };
+    };*/
 
     // 실제 서버를 사용할 때
-    // String url = '${dotenv.env['NGROK_URL']}/crew/detail/${widget.crewNumber}';
-    // var response = await http.get(Uri.parse(url));
-    // if (response.statusCode == 200) {
-    //   return CrewDetail.fromJson(json.decode(response.body));
-    // } else {
-    //   throw Exception('Failed to load crew details');
-    // }
+    String url = '${dotenv.env['NGROK_URL']}/crew/detail/${widget.crewNumber}';
+    var response = await http.get(Uri.parse(url));
+    if (response.statusCode == 200) {
+      List<dynamic> crewList = json.decode(utf8.decode(response.bodyBytes));
+      // crewNumber에 해당하는 객체를 찾습니다.
+      Map<String, dynamic>? crewData = crewList.firstWhere(
+              (element) => element['crewNumber'] == widget.crewNumber,
+          orElse: () => null
+      );
 
-    return CrewDetail.fromJson(mockData);
+      if (crewData != null) {
+        // 조건에 맞는 데이터로 CrewDetail 인스턴스를 생성합니다.
+        return CrewDetail.fromJson(crewData);
+      } else {
+        // crewNumber에 해당하는 데이터가 없는 경우 예외를 발생시킵니다.
+        throw Exception('Crew with number ${widget.crewNumber} not found');
+      }
+    } else {
+      // HTTP 요청이 실패한 경우 예외를 발생시킵니다.
+      throw Exception('Failed to load crew details with status code ${response.statusCode}');
+    }
+
+    //return CrewDetail.fromJson(mockData);
   }
 
   @override
