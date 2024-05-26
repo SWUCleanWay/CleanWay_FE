@@ -4,16 +4,23 @@ import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
-import '/main.dart';
+import './crew_detail_screen.dart';
 import '/widgets/location_search.dart';
 
-class CreateProjectScreen extends StatefulWidget {
+
+class CreateCrewProjectScreen extends StatefulWidget {
+
+  final int crewNumber;
+  final String crewName;
+
+  CreateCrewProjectScreen({Key? key, required this.crewNumber, required this.crewName}) : super(key: key);
+
   @override
-  _CreateProjectScreenState createState() => _CreateProjectScreenState();
+  _CreateCrewProjectScreenState createState() => _CreateCrewProjectScreenState();
 }
 
-class _CreateProjectScreenState extends State<CreateProjectScreen> {
-  TextEditingController crewNameController = TextEditingController();
+class _CreateCrewProjectScreenState extends State<CreateCrewProjectScreen> {
+  TextEditingController projectTitleController = TextEditingController();
   TextEditingController capacityController = TextEditingController();
   TextEditingController descriptionController = TextEditingController();
   List<TextEditingController> wayPointsControllers = [
@@ -27,47 +34,30 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
 
   bool showWaypointField = false;
 
-  Map<String, dynamic> registerCrewData = {
-    'cleanCrewDto': {
-      'userNumber': 0,
-      'crewName': '',
-      'crewContent': '',
-      'crewRecruitment': 0,
-    },
-    'cleanCrewProjectDto': {
-      'crewProjectNumber': 0,
-      'crewNumber': 0,
-      'projectWriteTime': '',
-      'projectContent': '',
-      'projectRecruitment': 0,
-      'projectDate': '',
-      'projectTime': '',
-      'projectRoleNumber': 0,
-      'userNumber': 0,
-      'projectSLng': 0.0,
-      'projectSLat': 0.0,
-      'projectVLng': 0.0,
-      'projectVLat': 0.0,
-      'projectDLng': 0.0,
-      'projectDLat': 0.0,
-      "projectSName": '',
-      "projectVName": '',
-      "projectDName": ''
-    }
-  };
-
-  /*void _addWayPoint() {
-    setState(() {
-      if (!showWaypointField) {
-        showWaypointField = true;
-      } else {
-        wayPointsControllers.add(TextEditingController());
-        registerCrewData['cleanCrewProjectDto']['projectVLat'].add(0.0);
-        registerCrewData['cleanCrewProjectDto']['projectVLng'].add(0.0);
-        registerCrewData['cleanCrewProjectDto']['projectVName'].add('');
-      }
-    });
-  }*/
+  Map<String, dynamic> registerCrewProjectData = {
+  "cleanCrewProjectDto": {
+    "crewProjectNumber": 0,
+    "crewNumber": 0,
+    "crewName":"string",
+    "projectWriteTime": "string",
+    "projectTitle": "string",
+    "projectContent": "string",
+    "projectRecruitment": 0,
+    "projectDate": "string",
+    "projectTime": "string",
+    "projectRoleNumber": 0,
+    "userNumber": 0,
+    "projectSLng": 0,
+    "projectSLat": 0,
+    "projectVLng": 0,
+    "projectVLat": 0,
+    "projectDLng": 0,
+    "projectDLat": 0,
+    "projectSName": "string",
+    "projectVName": "string",
+    "projectDName": "string"
+  }
+};
 
   void _addWayPoint() {
     setState(() {
@@ -118,7 +108,7 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
     if (result != null) {
       setState(() {
         controller.text = result['spotName'];
-        var projectData = registerCrewData['cleanCrewProjectDto'];
+        var projectData = registerCrewProjectData['cleanCrewProjectDto'];
         if (type == 'S' || type == 'V' || type == 'D') {
           projectData['project${type}Lat'] = result['spotLat'];
           projectData['project${type}Lng'] = result['spotLng'];
@@ -132,32 +122,35 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
   }
 
 
-  Future<void> _registerCrew() async {
+  Future<void> _registerCrewProject() async {
+    // 프로젝트 데이터 준비
+    registerCrewProjectData['cleanCrewProjectDto']['projectTitle'] = projectTitleController.text;
+    registerCrewProjectData['cleanCrewProjectDto']['projectContent'] = descriptionController.text;
+    registerCrewProjectData['cleanCrewProjectDto']['projectRecruitment'] = int.tryParse(capacityController.text) ?? 0;
+    registerCrewProjectData['cleanCrewProjectDto']['projectDate'] = DateFormat('yyyy-MM-dd').format(selectedDate);
+    registerCrewProjectData['cleanCrewProjectDto']['projectTime'] = selectedTime.format(context);
 
-    registerCrewData['cleanCrewDto']['crewName'] = crewNameController.text;
-    registerCrewData['cleanCrewDto']['crewContent'] = descriptionController.text;
-    registerCrewData['cleanCrewDto']['crewRecruitment'] = int.tryParse(capacityController.text) ?? 0;
+    String jsonBody = json.encode(registerCrewProjectData);
+    print("Sending data: $jsonBody"); // 데이터 보내기 전 로그 출력
 
-    registerCrewData['cleanCrewProjectDto']['projectDate'] = DateFormat('yyyy-MM-dd').format(selectedDate);
-    registerCrewData['cleanCrewProjectDto']['projectTime'] = selectedTime.format(context);
-
-    String jsonBody = json.encode(registerCrewData);
-    print("Sending data: $jsonBody");
-
+    // HTTP POST 요청 실행
     try {
       http.Response response = await http.post(
-        Uri.parse('${dotenv.env['NGROK_URL']}/crew/add'),
+        Uri.parse('${dotenv.env['NGROK_URL']}/crew-project/${widget.crewNumber}/add'),
         headers: {'Content-Type': 'application/json; charset=UTF-8'},
         body: jsonBody,
       );
 
+      print('Response status: ${response.statusCode}'); // 응답 상태 로그 출력
+      print('Response body: ${response.body}'); // 응답 내용 로그 출력
+
       if (response.statusCode == 200 || response.statusCode == 201) {
-        print("success");
-        /*print(jsonBody);*/
+        print("Registration successful");
+        print('Response body: ${response.body}'); // 응답 내용 로그 출력
         Navigator.pop(context);
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => MainScreen(initialCrewSelected: true)),
+          MaterialPageRoute(builder: (context) => CrewDetailPage(crewNumber: widget.crewNumber, crewName: widget.crewName)),
         );
       } else {
         print('Failed to register crew: ${response.statusCode} error');
@@ -166,6 +159,7 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
       print('Error occurred: $e');
     }
   }
+
 
 
   @override
@@ -229,7 +223,7 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('크루원 모집하기'),
+        title: Text('크루 프로젝트 생성하기'),
         leading: IconButton(
           icon: Icon(Icons.arrow_back),
           onPressed: () => Navigator.of(context).pop(),
@@ -242,7 +236,7 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
               Text(
-                '크루명',
+                '제목',
                 style: TextStyle(
                   fontSize: 18.0,
                   fontWeight: FontWeight.bold,
@@ -250,9 +244,9 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
               ),
               SizedBox(height: 10),
               TextField(
-                controller: crewNameController,
+                controller: projectTitleController,
                 decoration: InputDecoration(
-                  hintText: '크루의 이름을 지어주세요!',
+                  hintText: '프로젝트 제목을 지어주세요!',
                   border: OutlineInputBorder(),
                 ),
               ),
@@ -351,7 +345,7 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
       bottomNavigationBar: Padding(
         padding: EdgeInsets.all(8.0),
         child: ElevatedButton(
-          onPressed: _registerCrew,
+          onPressed: _registerCrewProject,
           child: Text('등록하기'),
           style: ElevatedButton.styleFrom(
             backgroundColor: Theme

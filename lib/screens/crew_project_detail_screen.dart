@@ -35,33 +35,34 @@ class CrewDetail {
 
   factory CrewDetail.fromJson(Map<String, dynamic> json) {
     return CrewDetail(
-      title: json['crewName'],
-      author: json['userNickname'],
-      createdAt: json['crewWriteTime'],
-      location: json['projectSName'],
-      route: json['projectDName'],
-      date: json['projectDate'],
-      time: json['projectTime'],
-      participants: json['memberCount'],
-      capacity: json['crewRecruitment'],
-      additionalInfo: json['crewContent'],
-      projectSName: json['projectSName'],
-      projectVName: json['projectVName'],
-      projectDName: json['projectDName'],
+      title: json['projectTitle'] as String? ?? 'Unknown',
+      author: json['userNickname'] as String? ?? 'Unknown',
+      createdAt: json['crewWriteTime'] as String? ?? 'Unknown',
+      location: json['projectSName'] as String? ?? 'Unknown',
+      route: json['projectDName'] as String? ?? 'Unknown',
+      date: json['projectDate'] as String? ?? 'Unknown',
+      time: json['projectTime'] as String? ?? 'Unknown',
+      participants: json['memberCount'] as int? ?? 0,
+      capacity: json['crewRecruitment'] as int? ?? 0,
+      additionalInfo: json['crewContent'] as String? ?? 'No additional info',
+      projectSName: json['projectSName'] as String? ?? 'Unknown',
+      projectVName: json['projectVName'] as String? ?? 'Unknown',
+      projectDName: json['projectDName'] as String? ?? 'Unknown',
     );
   }
 }
 
-class ProjectDetailScreen extends StatefulWidget {
+class CrewProjectDetailScreen extends StatefulWidget {
   final int crewNumber;
+  final int crewProjectNumber;
 
-  ProjectDetailScreen({required this.crewNumber});
+  CrewProjectDetailScreen({required this.crewNumber, required this.crewProjectNumber});
 
   @override
-  _ProjectDetailScreenState createState() => _ProjectDetailScreenState();
+  _CrewProjectDetailScreenState createState() => _CrewProjectDetailScreenState();
 }
 
-class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
+class _CrewProjectDetailScreenState extends State<CrewProjectDetailScreen> {
   late Future<CrewDetail> crewDetailFuture;
 
   @override
@@ -71,68 +72,28 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
   }
 
   Future<CrewDetail> fetchCrewDetail() async {
-    String url = '${dotenv.env['NGROK_URL']}/crew/detail/${widget.crewNumber}';
+    String url = '${dotenv.env['NGROK_URL']}/crew-project/detail/${widget.crewNumber}/${widget.crewProjectNumber}';
+    print("Fetching details from: $url");  // URL 로그 출력
     var response = await http.get(Uri.parse(url));
-    if (response.statusCode == 200) {
-      List<dynamic> crewList = json.decode(utf8.decode(response.bodyBytes));
-      // crewNumber에 해당하는 객체를 찾습니다.
-      Map<String, dynamic>? crewData = crewList.firstWhere(
-              (element) => element['crewNumber'] == widget.crewNumber,
-          orElse: () => null
-      );
+    print("Response status: ${response.statusCode}");  // 상태 코드 로그 출력
 
-      if (crewData != null) {
-        // 조건에 맞는 데이터로 CrewDetail 인스턴스를 생성합니다.
+    if (response.statusCode == 200) {
+      List<dynamic> responseData = json.decode(utf8.decode(response.bodyBytes));
+      if (responseData.isNotEmpty) {
+        Map<String, dynamic> crewData = responseData.first;
         return CrewDetail.fromJson(crewData);
       } else {
-        // crewNumber에 해당하는 데이터가 없는 경우 예외를 발생시킵니다.
-        throw Exception('Crew with number ${widget.crewNumber} not found');
+        throw Exception("Received empty data from the server");
       }
     } else {
-      // HTTP 요청이 실패한 경우 예외를 발생시킵니다.
+      print("Error fetching data: ${response.body}");  // 에러 내용 로그 출력
       throw Exception('Failed to load crew details with status code ${response.statusCode}');
     }
-
-    //return CrewDetail.fromJson(mockData);
   }
 
-  /*Widget buildDetailLayout(CrewDetail detail) {
-    // 마커를 생성합니다.
-    final List<Marker> markers = [
-      Marker(
-        markerId: 'start',
-        position: LatLng(detail.projectSLat, detail.projectSLng),
-        captionText: '출발지: ${detail.projectSName}',
-        captionColor: Colors.black,
-        captionTextSize: 14.0,
-        captionOffset: 20,
-        icon: MarkerIcons.black,
-        alpha: 0.8,
-      ),
-      Marker(
-        markerId: 'via',
-        position: LatLng(detail.projectVLat, detail.projectVLng),
-        captionText: '경유지: ${detail.projectVName}',
-        captionColor: Colors.black,
-        captionTextSize: 14.0,
-        captionOffset: 20,
-        icon: MarkerIcons.blue,
-        alpha: 0.8,
-      ),
-      Marker(
-        markerId: 'destination',
-        position: LatLng(detail.projectDLat, detail.projectDLng),
-        captionText: '목적지: ${detail.projectDName}',
-        captionColor: Colors.black,
-        captionTextSize: 14.0,
-        captionOffset: 20,
-        icon: MarkerIcons.yellow,
-        alpha: 0.8,
-      ),
-    ];*/
 
 
-    @override
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
@@ -156,38 +117,23 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
           return Center(child: CircularProgressIndicator());
         },
       ),
-      bottomNavigationBar: Container(
-        padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-        child: SafeArea(
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: () {
-                    // Implement 'Browse Around' functionality
-                  },
-                  child: Text('둘러보기'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    foregroundColor: Theme.of(context).colorScheme.primary,
-                  ),
-                ),
-              ),
-              SizedBox(width: 10),
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: () {
-                    // Implement 'Join' functionality
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Theme.of(context).colorScheme.primary,
-                    foregroundColor: Colors.white,
-                  ),
-                  child: Text('참여하기'),
-                ),
-              ),
-            ],
+      bottomNavigationBar: Padding(
+        padding: EdgeInsets.all(8.0),
+        child: ElevatedButton(
+          onPressed: () {
+            // Implement 'Join' functionality
+          },
+          child: Text('참여하기'),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Theme
+                .of(context)
+                .colorScheme
+                .primary,
+            foregroundColor: Colors.white,
+            minimumSize: Size(double.infinity, 50),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
           ),
         ),
       ),
@@ -216,11 +162,13 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('모임 위치', style: TextStyle(fontSize: 16.0, fontWeight: FontWeight.bold)),
+                Text('모임 위치', style: TextStyle(
+                    fontSize: 16.0, fontWeight: FontWeight.bold)),
                 SizedBox(height: 10),
                 Text(detail.location),
                 Divider(),
-                Text('루트', style: TextStyle(fontSize: 16.0, fontWeight: FontWeight.bold)),
+                Text('루트', style: TextStyle(
+                    fontSize: 16.0, fontWeight: FontWeight.bold)),
                 SizedBox(height: 10),
                 Text('출발지 : ${detail.projectSName}'),
                 Text('경유지 : ${detail.projectVName}'),
@@ -238,19 +186,23 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
                   height: 10,
                 ),
                 Divider(),
-                Text('날짜', style: TextStyle(fontSize: 16.0, fontWeight: FontWeight.bold)),
+                Text('날짜', style: TextStyle(
+                    fontSize: 16.0, fontWeight: FontWeight.bold)),
                 SizedBox(height: 10),
                 Text(detail.date),
                 Divider(),
-                Text('시간', style: TextStyle(fontSize: 16.0, fontWeight: FontWeight.bold)),
+                Text('시간', style: TextStyle(
+                    fontSize: 16.0, fontWeight: FontWeight.bold)),
                 SizedBox(height: 10),
                 Text(detail.time),
                 Divider(),
-                Text('참여 인원', style: TextStyle(fontSize: 16.0, fontWeight: FontWeight.bold)),
+                Text('참여 인원', style: TextStyle(
+                    fontSize: 16.0, fontWeight: FontWeight.bold)),
                 SizedBox(height: 10),
                 Text('${detail.participants} / ${detail.capacity}명'),
                 Divider(),
-                Text('추가 정보', style: TextStyle(fontSize: 16.0, fontWeight: FontWeight.bold)),
+                Text('추가 정보', style: TextStyle(
+                    fontSize: 16.0, fontWeight: FontWeight.bold)),
                 SizedBox(height: 10),
                 Text(detail.additionalInfo),
               ],
@@ -259,6 +211,5 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
         ],
       ),
     );
-
   }
 }
