@@ -3,9 +3,53 @@ import '/widgets/bottom_navigation.dart';
 import 'crew.dart';
 import 'route.dart';
 import 'package:clean_way/main.dart';
+import 'package:kakao_flutter_sdk_user/kakao_flutter_sdk_user.dart';
+import 'package:kakao_flutter_sdk_auth/kakao_flutter_sdk_auth.dart';
+import 'package:http/http.dart' as http;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'dart:convert';
 
-class MyScreen extends StatelessWidget {
-  const MyScreen({Key? key}) : super(key: key);
+class MyScreen extends StatefulWidget {
+  @override
+  _MyScreenState createState() => _MyScreenState();
+}
+
+class _MyScreenState extends State<MyScreen> {
+  bool isLoggedIn = false;
+  User? user;
+
+  @override
+  void initState() {
+    super.initState();
+    checkIfLoggedIn();
+  }
+
+  void checkIfLoggedIn() async {
+    isLoggedIn = await AuthApi.instance.hasToken();
+    if (isLoggedIn) {
+      try {
+        user = await UserApi.instance.me();
+      } catch (error) {
+        print('사용자 정보 가져오기 실패: $error');
+        isLoggedIn = false;
+      }
+    }
+    setState(() {});
+  }
+
+  void loginWithKakao() async {
+    try {
+      var tokenResult = await UserApi.instance.loginWithKakaoTalk();
+      if (tokenResult != null) {
+        user = await UserApi.instance.me();
+        isLoggedIn = true;
+      }
+    } catch (error) {
+      print('KakaoTalk login failed: $error');
+      isLoggedIn = false;
+    }
+    setState(() {});
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -17,25 +61,32 @@ class MyScreen extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            CircleAvatar(
-              radius: 40,
-              backgroundColor: Colors.grey[200],
-              child: Icon(Icons.person, size: 60, color: Colors.grey),
-            ),
-            SizedBox(height: 20),
-            Text(
-              '@ @ @',  //닉네임
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-            TextButton(
-              onPressed: () {
-                // 버튼이 눌렸을 때 실행할 기능
-              },
-              child:
-              Text('닉네임 수정'),
-              style: TextButton.styleFrom(
+            if (!isLoggedIn) ...[
+              ElevatedButton(
+                onPressed: loginWithKakao,
+                child: Text('카카오톡으로 로그인하기'),
               ),
-            ),
+            ] else ...[
+              CircleAvatar(
+                radius: 40,
+                backgroundImage: NetworkImage(user?.kakaoAccount?.profile?.profileImageUrl ?? ''),
+                backgroundColor: Colors.grey[200],
+                child: user?.kakaoAccount?.profile?.profileImageUrl == null
+                    ? Icon(Icons.person, size: 60, color: Colors.grey)
+                    : null,
+              ),
+              SizedBox(height: 20),
+              Text(
+                user?.kakaoAccount?.profile?.nickname ?? '닉네임 없음',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+              TextButton(
+                onPressed: () {
+                  // Implement nickname edit functionality
+                },
+                child: Text('닉네임 수정'),
+              ),
+            ],
             SizedBox(height: 30),
             Divider(),
             ListTile(title: Text('내 장소')),
@@ -48,26 +99,14 @@ class MyScreen extends StatelessWidget {
         ),
       ),
       bottomNavigationBar: BottomNavigation(
-        selectedIndex: 3, // MY 화면이므로 인덱스는 3
+        selectedIndex: 3,
         onItemSelected: (index) {
-          // 네비게이션 메뉴 클릭 시
           if (index == 0) {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (context) => MainScreen()), // 홈 화면으로 이동
-            );
+            Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => MainScreen()));
           } else if (index == 1) {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (context) => CrewScreen()), // 크루 화면으로 이동
-            );
+            Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => CrewScreen()));
           } else if (index == 2) {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (context) => RouteScreen()), // 루트 화면으로 이동
-            );
-          } else if (index == 3) {
-            // 이미 MY
+            Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => RouteScreen()));
           }
         },
       ),

@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'crew_detail_screen.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
 
 class CrewDetail {
   final String title;
+  final String crewName;
   final String author;
   final String createdAt;
   final String location;
@@ -19,6 +21,7 @@ class CrewDetail {
 
   CrewDetail({
     required this.title,
+    required this.crewName,
     required this.author,
     required this.createdAt,
     required this.location,
@@ -36,6 +39,7 @@ class CrewDetail {
   factory CrewDetail.fromJson(Map<String, dynamic> json) {
     return CrewDetail(
       title: json['crewName'],
+      crewName: json['crewName'],
       author: json['userNickname'],
       createdAt: json['crewWriteTime'],
       location: json['projectSName'],
@@ -54,8 +58,10 @@ class CrewDetail {
 
 class ProjectDetailScreen extends StatefulWidget {
   final int crewNumber;
+  final String crewName;
+  final int crewProjectNumber;
 
-  ProjectDetailScreen({required this.crewNumber});
+  ProjectDetailScreen({required this.crewNumber,required this.crewName, required this.crewProjectNumber });
 
   @override
   _ProjectDetailScreenState createState() => _ProjectDetailScreenState();
@@ -63,6 +69,7 @@ class ProjectDetailScreen extends StatefulWidget {
 
 class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
   late Future<CrewDetail> crewDetailFuture;
+  bool isJoined = false;
 
   @override
   void initState() {
@@ -93,44 +100,78 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
       throw Exception('Failed to load crew details with status code ${response.statusCode}');
     }
 
-    //return CrewDetail.fromJson(mockData);
   }
 
-  /*Widget buildDetailLayout(CrewDetail detail) {
-    // 마커를 생성합니다.
-    final List<Marker> markers = [
-      Marker(
-        markerId: 'start',
-        position: LatLng(detail.projectSLat, detail.projectSLng),
-        captionText: '출발지: ${detail.projectSName}',
-        captionColor: Colors.black,
-        captionTextSize: 14.0,
-        captionOffset: 20,
-        icon: MarkerIcons.black,
-        alpha: 0.8,
-      ),
-      Marker(
-        markerId: 'via',
-        position: LatLng(detail.projectVLat, detail.projectVLng),
-        captionText: '경유지: ${detail.projectVName}',
-        captionColor: Colors.black,
-        captionTextSize: 14.0,
-        captionOffset: 20,
-        icon: MarkerIcons.blue,
-        alpha: 0.8,
-      ),
-      Marker(
-        markerId: 'destination',
-        position: LatLng(detail.projectDLat, detail.projectDLng),
-        captionText: '목적지: ${detail.projectDName}',
-        captionColor: Colors.black,
-        captionTextSize: 14.0,
-        captionOffset: 20,
-        icon: MarkerIcons.yellow,
-        alpha: 0.8,
-      ),
-    ];*/
+  Future<void> joinCrew() async {
+    if (!isJoined) { // 아직 참여하지 않았다면
+      String url = '${dotenv.env['NGROK_URL']}/crew/join/${widget.crewNumber}';
+      try {
+        var response = await http.post(Uri.parse(url));
+        if (response.statusCode == 303) {
+          setState(() {
+            isJoined = true;
+          });
+          print("크루 가입 완료");
+          // 상태가 변경된 후 다이얼로그를 표시하기 위해 대기
+          Future.delayed(Duration.zero, () {
+            showSuccessDialog('크루에 가입되었습니다.');
+          });
+        } else if (response.statusCode == 500) {
+          showErrorDialog('이미 참여한 프로젝트입니다.');
+        }
+      } catch (e) {
+        showErrorDialog('네트워크 오류: $e');
+      }
+    } else {
+      showErrorDialog('프로젝트 참여에 실패했습니다. 다시 시도해주세요.');
+    }
+  }
 
+
+  void showSuccessDialog(String message) {
+    print("Showing Success Dialog: $message");
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Success'),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => CrewDetailPage(
+                    crewNumber: widget.crewNumber,
+                    crewName: widget.crewName,
+                  ),
+                ),
+              );
+            },
+            child: Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void showErrorDialog(String message) {
+    print("Showing Error Dialog: $message");
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Error'),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
 
     @override
   Widget build(BuildContext context) {
@@ -165,7 +206,15 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
               Expanded(
                 child: ElevatedButton(
                   onPressed: () {
-                    // Implement 'Browse Around' functionality
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => CrewDetailPage(
+                          crewNumber: widget.crewNumber,
+                          crewName: widget.crewName,
+                        ),
+                      ),
+                    );
                   },
                   child: Text('둘러보기'),
                   style: ElevatedButton.styleFrom(
@@ -177,14 +226,12 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
               SizedBox(width: 10),
               Expanded(
                 child: ElevatedButton(
-                  onPressed: () {
-                    // Implement 'Join' functionality
-                  },
+                  onPressed: joinCrew,
+                  child: Text(isJoined ? '참여됨' : '참여하기'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Theme.of(context).colorScheme.primary,
+                    backgroundColor: isJoined ? Colors.grey : Theme.of(context).colorScheme.primary,
                     foregroundColor: Colors.white,
                   ),
-                  child: Text('참여하기'),
                 ),
               ),
             ],
@@ -192,7 +239,9 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
         ),
       ),
     );
-  }
+    }
+}
+
 
   Widget buildDetailLayout(CrewDetail detail) {
     return SingleChildScrollView(
@@ -259,6 +308,4 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
         ],
       ),
     );
-
   }
-}
