@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
+import 'package:kakao_flutter_sdk_user/kakao_flutter_sdk_user.dart';
 
 import 'screens/create_project_screen.dart';
 import 'screens/create_report_screen.dart';
@@ -18,6 +19,12 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   try {
     await dotenv.load(fileName: ".env"); // .env 파일 로드
+
+    KakaoSdk.init(
+      nativeAppKey: dotenv.env['KAKAO_NATIVE_APP_KEY'],
+      javaScriptAppKey: dotenv.env['KAKAO_JS_APP_KEY'],
+    );
+
     print("clientId: ${dotenv.env['NAVER_MAP_CLIENT_ID']}");
     await NaverMapSdk.instance.initialize(
         clientId: dotenv.env['NAVER_MAP_CLIENT_ID']!, // .env에서 클라이언트 ID 사용
@@ -149,16 +156,26 @@ class _MainScreenState extends State<MainScreen> {
         print('success');
         var data = jsonDecode(utf8.decode(response.bodyBytes)) as List;
         setState(() {
-          _crewData = data.map((item) => {
-            'crewNumber': item['crewNumber'],
-            'title': item['crewName'],
-            'date': item['crewWriteTime'],
-            'members': item['memberCount'],
-            'capacity': item['crewRecruitment'],
+          _crewData = data.map((item) {
+            int crewProjectNumber = 0;  // 기본값을 0으로 설정
+            if (item['crewProjectNumber'] != null) {
+              crewProjectNumber = item['crewProjectNumber'] is int
+                  ? item['crewProjectNumber']
+                  : int.parse(item['crewProjectNumber'].toString());
+            }
+            return {
+              'crewName': item['crewName'],
+              'crewNumber': item['crewNumber'],
+              'crewProjectNumber': crewProjectNumber,
+              'title': item['crewName'],
+              'date': item['crewWriteTime'],
+              'members': item['memberCount'],
+              'capacity': item['crewRecruitment'],
+            };
           }).toList();
         });
       } else {
-        throw Exception('Failed to load report data');
+        throw Exception('Failed to load crew data');
       }
     } catch (e) {
       print('API 호출 중 에러 발생: $e');
@@ -284,7 +301,7 @@ class _MainScreenState extends State<MainScreen> {
                       onTap: () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (context) => ProjectDetailScreen(crewNumber: post['crewNumber'])),
+                          MaterialPageRoute(builder: (context) => ProjectDetailScreen(crewNumber: post['crewNumber'], crewName:post['crewName'], crewProjectNumber: post['crewProjectNumber'])),
                         );
                       },
                       title: Text(post['title']),

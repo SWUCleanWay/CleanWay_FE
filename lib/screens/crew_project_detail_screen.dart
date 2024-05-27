@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
+import  'crew_detail_screen.dart';
 
 class CrewDetail {
   final String title;
@@ -64,6 +65,7 @@ class CrewProjectDetailScreen extends StatefulWidget {
 
 class _CrewProjectDetailScreenState extends State<CrewProjectDetailScreen> {
   late Future<CrewDetail> crewDetailFuture;
+  bool hasJoined = false;
 
   @override
   void initState() {
@@ -91,6 +93,42 @@ class _CrewProjectDetailScreenState extends State<CrewProjectDetailScreen> {
     }
   }
 
+  Future<void> joinProject() async {
+    if (!hasJoined) {  // Check if not already joined
+      String url = '${dotenv.env['NGROK_URL']}/crew-project/join/${widget.crewNumber}/${widget.crewProjectNumber}';
+      try {
+        var response = await http.post(Uri.parse(url));
+        if (response.statusCode == 303) {
+          setState(() {
+            hasJoined = true;  // Update state to reflect join status
+          });
+        } else if (response.statusCode == 500) {
+          showErrorDialog('Failed to join the project. Please try again.');
+        }
+      } catch (e) {
+        showErrorDialog('Network error: $e');
+      }
+    } else {
+      // 인증로직
+      // authenticateUser();
+    }
+  }
+
+  void showErrorDialog(String message) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Error'),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
 
 
   @override
@@ -120,15 +158,10 @@ class _CrewProjectDetailScreenState extends State<CrewProjectDetailScreen> {
       bottomNavigationBar: Padding(
         padding: EdgeInsets.all(8.0),
         child: ElevatedButton(
-          onPressed: () {
-            // Implement 'Join' functionality
-          },
-          child: Text('참여하기'),
+          onPressed: joinProject, 
+          child: Text(hasJoined ? '인증하기' : '참여하기'),  
           style: ElevatedButton.styleFrom(
-            backgroundColor: Theme
-                .of(context)
-                .colorScheme
-                .primary,
+            backgroundColor: Theme.of(context).colorScheme.primary,
             foregroundColor: Colors.white,
             minimumSize: Size(double.infinity, 50),
             shape: RoundedRectangleBorder(
@@ -137,6 +170,7 @@ class _CrewProjectDetailScreenState extends State<CrewProjectDetailScreen> {
           ),
         ),
       ),
+
     );
   }
 
