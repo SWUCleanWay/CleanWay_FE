@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import '/widgets/bottom_navigation.dart';
 import 'crew.dart';
 import 'route.dart';
+import  'login_screen.dart';
+import 'my_place.dart';
+import 'my_project.dart';
 import 'package:clean_way/main.dart';
 import 'package:kakao_flutter_sdk_user/kakao_flutter_sdk_user.dart';
 import 'package:kakao_flutter_sdk_auth/kakao_flutter_sdk_auth.dart';
@@ -66,6 +69,16 @@ class _MyScreenState extends State<MyScreen> {
                 onPressed: loginWithKakao,
                 child: Text('카카오톡으로 로그인하기'),
               ),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => LoginScreen()),
+                  );
+                },
+                child: Text('Login Screen으로 이동'),
+              ),
+
             ] else ...[
               CircleAvatar(
                 radius: 40,
@@ -89,11 +102,26 @@ class _MyScreenState extends State<MyScreen> {
             ],
             SizedBox(height: 30),
             Divider(),
-            ListTile(title: Text('내 장소')),
+            ListTile(
+              title: Text('내 장소'),
+              onTap: () {
+                Navigator.push(context, MaterialPageRoute(builder: (context) => MyPlace()));
+              },
+            ),
             Divider(),
-            ListTile(title: Text('내 루트')),
+            ListTile(
+              title: Text('내 루트'),
+              onTap: () {
+                // Implement navigation to '내 루트' page if necessary
+              },
+            ),
             Divider(),
-            ListTile(title: Text('참여한 플로깅')),
+            ListTile(
+              title: Text('참여한 플로깅'),
+              onTap: () {
+                Navigator.push(context, MaterialPageRoute(builder: (context) => MyProject()));
+              },
+            ),
             Divider(),
           ],
         ),
