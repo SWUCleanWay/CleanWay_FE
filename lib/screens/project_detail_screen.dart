@@ -18,6 +18,7 @@ class CrewDetail {
   final int capacity;
   final String additionalInfo;
   final String projectSName, projectVName, projectDName;
+  final double projectSLng, projectSLat, projectVLng, projectVLat, projectDLng, projectDLat;
 
   CrewDetail({
     required this.title,
@@ -34,6 +35,12 @@ class CrewDetail {
     required this.projectSName,
     required this.projectVName,
     required this.projectDName,
+    required this.projectDLat,
+    required this.projectDLng,
+    required this.projectSLat,
+    required this.projectSLng,
+    required this.projectVLat,
+    required this.projectVLng,
   });
 
   factory CrewDetail.fromJson(Map<String, dynamic> json) {
@@ -52,6 +59,13 @@ class CrewDetail {
       projectSName: json['projectSName'],
       projectVName: json['projectVName'],
       projectDName: json['projectDName'],
+      projectDLat: json['projectDLat'].toDouble(),
+      projectDLng: json['projectDLng'].toDouble(),
+      projectVLat: json['projecVLat'].toDouble(),
+      projectVLng: json['projectVLng'].toDouble(),
+      projectSLat: json['projectSLat'].toDouble(),
+      projectSLng: json['projectSLng'].toDouble(),
+
     );
   }
 }
@@ -70,6 +84,7 @@ class ProjectDetailScreen extends StatefulWidget {
 class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
   late Future<CrewDetail> crewDetailFuture;
   bool isJoined = false;
+  NaverMapController? _controller;
 
   @override
   void initState() {
@@ -242,8 +257,32 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
     }
 }
 
+Widget buildDetailLayout(CrewDetail detail) {
+  final markerS = NMarker(
+      id: "start",
+      position: NLatLng(detail.projectSLat, detail.projectSLng),
+    );
+  final markerV =NMarker(
+      id: "via",
+      position: NLatLng(detail.projectVLat, detail.projectVLng),
+    );
+  final markerD =NMarker(
+      id: "destination",
+      position: NLatLng(detail.projectDLat, detail.projectDLng),
+    );
 
-  Widget buildDetailLayout(CrewDetail detail) {
+  final onMarkerinfoWindowS = NInfoWindow.onMarker(
+    id: markerS.info.id,
+    text: "출발지: ${detail.projectSName}",
+  );
+  final onMarkerinfoWindowV = NInfoWindow.onMarker(
+    id: markerV.info.id,
+    text: "경유지: ${detail.projectVName}",
+  );
+  final onMarkerinfoWindowD = NInfoWindow.onMarker(
+    id: markerD.info.id,
+    text: "도착지: ${detail.projectDName}",
+  );
     return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -275,17 +314,19 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
                 Text('경유지 : ${detail.projectVName}'),
                 Text('목적지 : ${detail.projectDName}'),
                 SizedBox(
-                  /*height: 200,  // 지도의 높이를 설정합니다.
-                  child: NaverMap(
-                    initialCameraPosition: CameraPosition(
-                      target: LatLng(detail.projectSLat, detail.projectSLng),  // 초기 위치를 출발지로 설정합니다.
-                      zoom: 13,  // 초기 줌 레벨을 설정합니다.
-                    ),
-                    markers: markers,  // 위에서 정의한 마커 리스트를 사용합니다.
-                    onMapCreated: onMapCreated,
-                  ),*/
                   height: 10,
                 ),
+            Container(
+              height: 200,  // 지도의 높이 설정
+              child: NaverMap(
+                onMapReady: (controller) {
+                  controller.addOverlayAll({markerS, markerV, markerD});
+                  markerS.openInfoWindow(onMarkerinfoWindowS);
+                  markerV.openInfoWindow(onMarkerinfoWindowV);
+                  markerD.openInfoWindow(onMarkerinfoWindowD);
+                },
+              ),
+            ),
                 Divider(),
                 Text('날짜', style: TextStyle(fontSize: 16.0, fontWeight: FontWeight.bold)),
                 SizedBox(height: 10),
