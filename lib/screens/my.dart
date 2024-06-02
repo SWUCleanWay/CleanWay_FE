@@ -1,16 +1,18 @@
+import 'package:clean_way/screens/my_info.dart';
 import 'package:flutter/material.dart';
 import '/widgets/bottom_navigation.dart';
 import 'crew.dart';
-import 'route.dart';
-import  'login_screen.dart';
 import 'my_place.dart';
 import 'my_project.dart';
+import 'package:clean_way/token_manager.dart' as myToken;
+
 import 'package:clean_way/main.dart';
 import 'package:kakao_flutter_sdk_user/kakao_flutter_sdk_user.dart';
 import 'package:kakao_flutter_sdk_auth/kakao_flutter_sdk_auth.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'dart:convert';
+
 
 class MyScreen extends StatefulWidget {
   @override
@@ -42,16 +44,145 @@ class _MyScreenState extends State<MyScreen> {
 
   void loginWithKakao() async {
     try {
-      var tokenResult = await UserApi.instance.loginWithKakaoTalk();
+      OAuthToken tokenResult = await UserApi.instance.loginWithKakaoTalk();
       if (tokenResult != null) {
-        user = await UserApi.instance.me();
+        var user = await UserApi.instance.me();
         isLoggedIn = true;
+
+        // 서버에 로그인 데이터를 전송하고 JWT 토큰을 받아 저장합니다.
+        await sendLoginDataToServer(user);
+
+        // 상태를 업데이트합니다.
+        setState(() {});
       }
     } catch (error) {
-      print('KakaoTalk login failed: $error');
+      print('KakaoTalk 로그인 실패: $error');
       isLoggedIn = false;
+      setState(() {});
     }
-    setState(() {});
+  }
+
+  Future<void> sendLoginDataToServer(User user) async {
+    String? baseUrl = dotenv.env['NGROK_URL'];
+    var url = Uri.parse('$baseUrl/kakao/login');
+
+    try {
+      var response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'id': user.id,
+          'nickname': user.kakaoAccount?.profile?.nickname,
+          'email': user.kakaoAccount?.email,
+        }),
+      );
+
+      print("서버 응답 상태 코드: ${response.statusCode}");
+      print("서버 응답 본문: ${response.body}");
+
+      if (response.statusCode == 200) {
+        // 서버 응답이 문자열일 경우 직접 저장
+        String token = response.body;
+        await myToken.TokenManager.instance.setToken(token);
+        print("JWT 토큰 저장: $token");
+        String? savedToken = await myToken.TokenManager.instance.getToken();
+        print("저장된 토큰: $savedToken");
+      } else {
+        print("서버 로그인 실패: ${response.body}");
+      }
+    } catch (e) {
+      print("서버 로그인 중 에러 발생: $e");
+    }
+  }
+
+  void logoutFromKakao() async {
+    try {
+      await UserApi.instance.logout();
+      print("로그아웃 성공");
+      setState(() {
+        isLoggedIn = false;
+        user = null;
+      });
+    } catch (error) {
+      print("로그아웃 실패: $error");
+    }
+  }
+
+  void unregisterFromKakao() async {
+    try {
+      final result = await UserApi.instance.unlink();
+      print("회원 탈퇴 성공");
+      setState(() {
+        isLoggedIn = false;
+        user = null;
+      });
+    } catch (error) {
+      print("회원 탈퇴 실패: $error");
+    }
+  }
+
+  void showEditNicknameDialog() {
+    TextEditingController nicknameController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('닉네임 수정'),
+          content: TextField(
+            controller: nicknameController,
+            decoration: InputDecoration(hintText: "새로운 닉네임 입력"),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: Text('취소'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+              child: Text('저장'),
+              onPressed: () {
+                updateNickname(nicknameController.text);
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> updateNickname(String newNickname) async {
+    String? token = await myToken.TokenManager.instance.getToken();
+    String? baseUrl = dotenv.env['NGROK_URL'];
+    var url = Uri.parse('$baseUrl/mypage/info');
+
+    print('사용할 토큰: $token');  // 토큰이 올바르게 전달되는지 확인
+
+    var requestBody = jsonEncode({'newNickname': newNickname});
+
+    try {
+      var response = await http.patch(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: requestBody,
+      );
+
+      print("닉네임 변경 응답 상태 코드: ${response.statusCode}");
+      print("닉네임 변경 응답 본문: ${response.body}");
+
+      if (response.statusCode == 200) {
+        print("닉네임이 성공적으로 변경되었습니다.");
+      } else {
+        print("닉네임 변경 실패: ${response.body}");
+      }
+    } catch (e) {
+      print("닉네임 변경 중 에러 발생: $e");
+    }
   }
 
   @override
@@ -60,7 +191,7 @@ class _MyScreenState extends State<MyScreen> {
       appBar: AppBar(
         title: Text('MY'),
       ),
-      body: Center(
+      body: SingleChildScrollView(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
@@ -69,15 +200,6 @@ class _MyScreenState extends State<MyScreen> {
                 onPressed: loginWithKakao,
                 child: Text('카카오톡으로 로그인하기'),
               ),
-              // ElevatedButton(
-              //   onPressed: () {
-              //     Navigator.push(
-              //       context,
-              //       MaterialPageRoute(builder: (context) => LoginScreen()),
-              //     );
-              //   },
-              //   child: Text('Login Screen으로 이동'),
-              // ),
 
             ] else ...[
               CircleAvatar(
@@ -90,17 +212,22 @@ class _MyScreenState extends State<MyScreen> {
               ),
               SizedBox(height: 20),
               Text(
-                user?.kakaoAccount?.profile?.nickname ?? '닉네임 없음',
+                user?.kakaoAccount?.profile?.nickname ?? '이승은',
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               ),
               TextButton(
-                onPressed: () {
-                  // Implement nickname edit functionality
-                },
+                onPressed: showEditNicknameDialog,
                 child: Text('닉네임 수정'),
               ),
             ],
             SizedBox(height: 30),
+            Divider(),
+            ListTile(
+              title: Text('내 정보'),
+              onTap: () {
+                Navigator.push(context, MaterialPageRoute(builder: (context) => MyInfo()));
+              },
+            ),
             Divider(),
             ListTile(
               title: Text('내 장소'),
@@ -123,6 +250,14 @@ class _MyScreenState extends State<MyScreen> {
               },
             ),
             Divider(),
+            TextButton(
+              onPressed: logoutFromKakao,
+              child: Text('로그아웃'),
+            ),
+            TextButton(
+              onPressed: unregisterFromKakao,
+              child: Text('회원 탈퇴'),
+            ),
           ],
         ),
       ),
