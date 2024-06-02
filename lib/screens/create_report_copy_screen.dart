@@ -7,6 +7,8 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
 import '/main.dart';
 import '/widgets/location_search.dart';
+import 'package:clean_way/token_manager.dart' as myToken;
+
 
 class CreateReportCopyScreen extends StatefulWidget {
   @override
@@ -100,7 +102,7 @@ class _CreateReportCopyScreenState extends State<CreateReportCopyScreen> {
 
   Future<void> _uploadReport() async {
     print('Uploading report...');
-
+    String? token = await myToken.TokenManager.instance.getToken();
     if (_image == null || _locationController.text.isEmpty || _selectedIssue.isEmpty || _selectedLatitude == null || _selectedLongitude == null) {
       print('Validation failed: Some fields are empty.');
       return;
@@ -131,7 +133,10 @@ class _CreateReportCopyScreenState extends State<CreateReportCopyScreen> {
     try {
       final response = await http.post(
         Uri.parse('${dotenv.env['NGROK_URL']}/report/add'),
-        headers: {'Content-Type': 'application/json; charset=UTF-8'},
+        headers: {
+          'Content-Type': 'application/json; charset=UTF-8',
+          'Authorization': 'Bearer $token',
+        },
         body: jsonEncode(requestData),
       );
 
