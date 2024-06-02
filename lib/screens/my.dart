@@ -69,15 +69,15 @@ class _MyScreenState extends State<MyScreen> {
                 onPressed: loginWithKakao,
                 child: Text('카카오톡으로 로그인하기'),
               ),
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => LoginScreen()),
-                  );
-                },
-                child: Text('Login Screen으로 이동'),
-              ),
+              // ElevatedButton(
+              //   onPressed: () {
+              //     Navigator.push(
+              //       context,
+              //       MaterialPageRoute(builder: (context) => LoginScreen()),
+              //     );
+              //   },
+              //   child: Text('Login Screen으로 이동'),
+              // ),
 
             ] else ...[
               CircleAvatar(
@@ -127,14 +127,12 @@ class _MyScreenState extends State<MyScreen> {
         ),
       ),
       bottomNavigationBar: BottomNavigation(
-        selectedIndex: 3,
+        selectedIndex: 2,
         onItemSelected: (index) {
-          if (index == 0) {
+          if (index == 1) {
             Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => MainScreen()));
-          } else if (index == 1) {
+          } else if (index == 0) {
             Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => CrewScreen()));
-          } else if (index == 2) {
-            Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => RouteScreen()));
           }
         },
       ),

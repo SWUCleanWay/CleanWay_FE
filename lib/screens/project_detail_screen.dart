@@ -59,13 +59,12 @@ class CrewDetail {
       projectSName: json['projectSName'],
       projectVName: json['projectVName'],
       projectDName: json['projectDName'],
-      projectDLat: json['projectDLat'].toDouble(),
-      projectDLng: json['projectDLng'].toDouble(),
-      projectVLat: json['projecVLat'].toDouble(),
-      projectVLng: json['projectVLng'].toDouble(),
-      projectSLat: json['projectSLat'].toDouble(),
-      projectSLng: json['projectSLng'].toDouble(),
-
+      projectDLat: json['projectDLat']?.toDouble() ?? 0.0,
+      projectDLng: json['projectDLng']?.toDouble() ?? 0.0,
+      projectVLat: json['projecVLat']?.toDouble() ?? 0.0,
+      projectVLng: json['projectVLng']?.toDouble() ?? 0.0,
+      projectSLat: json['projectSLat']?.toDouble() ?? 0.0,
+      projectSLng: json['projectSLng']?.toDouble() ?? 0.0,
     );
   }
 }
@@ -320,6 +319,11 @@ Widget buildDetailLayout(CrewDetail detail) {
               height: 200,  // 지도의 높이 설정
               child: NaverMap(
                 onMapReady: (controller) {
+                  controller.updateCamera(
+                      NCameraUpdate.scrollAndZoomTo(
+                          target: NLatLng(detail.projectSLat, detail.projectSLng)
+                      )
+                  );
                   controller.addOverlayAll({markerS, markerV, markerD});
                   markerS.openInfoWindow(onMarkerinfoWindowS);
                   markerV.openInfoWindow(onMarkerinfoWindowV);

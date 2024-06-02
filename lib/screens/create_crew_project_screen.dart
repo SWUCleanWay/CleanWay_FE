@@ -145,8 +145,8 @@ class _CreateCrewProjectScreenState extends State<CreateCrewProjectScreen> {
       print('Response body: ${response.body}'); // 응답 내용 로그 출력
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        print("Registration successful");
-        print('Response body: ${response.body}'); // 응답 내용 로그 출력
+        String responseBody = utf8.decode(response.bodyBytes);
+        print('Response body: $responseBody');
         Navigator.pop(context);
         Navigator.pushReplacement(
           context,

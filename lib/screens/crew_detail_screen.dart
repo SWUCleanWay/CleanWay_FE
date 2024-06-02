@@ -22,7 +22,7 @@ class Project {
 
   factory Project.fromJson(Map<String, dynamic> json) {
     return Project(
-      crewProjectNumber: json['crewProjectNumber']as int? ?? 0,
+      crewProjectNumber: json['crewProjectNumber'] as int? ?? 0,
       projectName: json['projectTitle'] as String? ?? 'Unknown',
       projectDate: json['projectDate'] as String? ?? 'Unknown',
       memberCount: json['projectMemberCount'] as int? ?? 0,
@@ -42,28 +42,22 @@ class CrewDetailPage extends StatefulWidget {
 }
 
 class _CrewDetailPageState extends State<CrewDetailPage> {
-  late Future<List<Project>> projects;
+  late Future<Map<String, dynamic>> projectData;
 
   @override
   void initState() {
     super.initState();
-    projects = fetchProjects();
+    projectData = fetchProjects();
   }
 
-  Future<List<Project>> fetchProjects() async {
+  Future<Map<String, dynamic>> fetchProjects() async {
     String url = '${dotenv.env['NGROK_URL']}/crew-project/team/${widget.crewNumber}';
     var response = await http.get(Uri.parse(url));
     if (response.statusCode == 200) {
-      List<dynamic> projectsJson = json.decode(utf8.decode(response.bodyBytes));
-      return projectsJson.map((json) => Project.fromJson(json)).toList();
+      return json.decode(utf8.decode(response.bodyBytes));
     } else {
-      throw Exception('Failed to load projects');
+      throw Exception('Failed to load project data');
     }
-
-    // // 서버 연결 대신 mock data 반환
-    // var mockData = '[{"crewProjectNumber": 1, "projectContent": "Sample Project", "projectDate": "2024-01-01", "projectMemberCount": 10, "isPastProject": "N"}]';
-    // List<dynamic> projectsJson = json.decode(mockData);
-    // return projectsJson.map((json) => Project.fromJson(json)).toList();
   }
 
   @override
@@ -72,19 +66,30 @@ class _CrewDetailPageState extends State<CrewDetailPage> {
       appBar: AppBar(
         title: Text(widget.crewName),
       ),
-      body: FutureBuilder<List<Project>>(
-        future: projects,
+      body: FutureBuilder<Map<String, dynamic>>(
+        future: projectData,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.done) {
             if (snapshot.hasData) {
-              List<Project> pastProjects = snapshot.data!.where((p) => p.isPastProject == 'Y').toList();
-              List<Project> upcomingProjects = snapshot.data!.where((p) => p.isPastProject == 'N').toList();
+              List<dynamic> topMembers = snapshot.data!['crewTop3VoList'];
+              List<Project> allProjects = (snapshot.data!['crewProjectList'] as List)
+                  .map((p) => Project.fromJson(p)).toList();
+              List<Project> pastProjects = allProjects
+                  .where((p) => p.isPastProject == 'Y')
+                  .toList();
+              List<Project> upcomingProjects = allProjects
+                  .where((p) => p.isPastProject == 'N')
+                  .toList();
 
               return SingleChildScrollView(
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
                     sectionHeader("모집 중인 프로젝트"),
                     projectList(upcomingProjects),
+                    SizedBox(height: 20),
+                    sectionHeader("Top 3 Members"),
+                    topMembersList(topMembers),
                     SizedBox(height: 20),
                     sectionHeader("지난 프로젝트"),
                     projectList(pastProjects),
@@ -130,6 +135,28 @@ class _CrewDetailPageState extends State<CrewDetailPage> {
           },
         );
       },
+    );
+  }
+
+  Widget topMembersList(List<dynamic> members) {
+    return Container(
+      height: 120,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        itemCount: members.length,
+        itemBuilder: (context, index) {
+          var member = members[index];
+          return Container(
+            width: 160,
+            child: Card(
+              child: ListTile(
+                title: Text(member['userNickname']),
+                subtitle: Text('참여수: ${member['projectCount']}'),
+              ),
+            ),
+          );
+        },
+      ),
     );
   }
 

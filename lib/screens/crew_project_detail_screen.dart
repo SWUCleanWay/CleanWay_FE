@@ -17,6 +17,7 @@ class CrewDetail {
   final int capacity;
   final String additionalInfo;
   final String projectSName, projectVName, projectDName;
+  final double projectSLng, projectSLat, projectVLng, projectVLat, projectDLng, projectDLat;
 
   CrewDetail({
     required this.title,
@@ -32,6 +33,12 @@ class CrewDetail {
     required this.projectSName,
     required this.projectVName,
     required this.projectDName,
+    required this.projectDLat,
+    required this.projectDLng,
+    required this.projectSLat,
+    required this.projectSLng,
+    required this.projectVLat,
+    required this.projectVLng,
   });
 
   factory CrewDetail.fromJson(Map<String, dynamic> json) {
@@ -49,6 +56,13 @@ class CrewDetail {
       projectSName: json['projectSName'] as String? ?? 'Unknown',
       projectVName: json['projectVName'] as String? ?? 'Unknown',
       projectDName: json['projectDName'] as String? ?? 'Unknown',
+      projectDLat: json['projectDLat']?.toDouble() ?? 0.0,
+      projectDLng: json['projectDLng']?.toDouble() ?? 0.0,
+      projectVLat: json['projecVLat']?.toDouble() ?? 0.0,
+      projectVLng: json['projectVLng']?.toDouble() ?? 0.0,
+      projectSLat: json['projectSLat']?.toDouble() ?? 0.0,
+      projectSLng: json['projectSLng']?.toDouble() ?? 0.0,
+
     );
   }
 }
@@ -75,23 +89,36 @@ class _CrewProjectDetailScreenState extends State<CrewProjectDetailScreen> {
 
   Future<CrewDetail> fetchCrewDetail() async {
     String url = '${dotenv.env['NGROK_URL']}/crew-project/detail/${widget.crewNumber}/${widget.crewProjectNumber}';
-    print("Fetching details from: $url");  // URL 로그 출력
-    var response = await http.get(Uri.parse(url));
-    print("Response status: ${response.statusCode}");  // 상태 코드 로그 출력
+    try {
+      var response = await http.get(
+        Uri.parse(url),
+        headers: {
+          'Accept-Charset': 'UTF-8',
+          'Content-Type': 'application/json'
+        },
+      );
+      print("Response status: ${response.statusCode}");
+      print("Received data: ${response.body}");
 
-    if (response.statusCode == 200) {
-      List<dynamic> responseData = json.decode(utf8.decode(response.bodyBytes));
-      if (responseData.isNotEmpty) {
-        Map<String, dynamic> crewData = responseData.first;
-        return CrewDetail.fromJson(crewData);
+      if (response.statusCode == 200) {
+        var responseData = json.decode(utf8.decode(response.bodyBytes));
+        if (responseData is List) {
+          // 응답이 배열인 경우, 첫 번째 요소를 사용합니다.
+          return CrewDetail.fromJson(responseData[0]);
+        } else {
+          // 응답이 객체인 경우, 바로 파싱합니다.
+          return CrewDetail.fromJson(responseData);
+        }
       } else {
-        throw Exception("Received empty data from the server");
+        print("Error fetching data: ${response.body}");
+        throw Exception('Failed to load crew details with status code ${response.statusCode}');
       }
-    } else {
-      print("Error fetching data: ${response.body}");  // 에러 내용 로그 출력
-      throw Exception('Failed to load crew details with status code ${response.statusCode}');
+    } catch (e) {
+      print("Error parsing data: $e");
+      throw Exception("Error parsing data: $e");
     }
   }
+
 
   Future<void> joinProject() async {
     if (!hasJoined) {  // Check if not already joined
@@ -175,6 +202,31 @@ class _CrewProjectDetailScreenState extends State<CrewProjectDetailScreen> {
   }
 
   Widget buildDetailLayout(CrewDetail detail) {
+    final markerS = NMarker(
+      id: "start",
+      position: NLatLng(detail.projectSLat, detail.projectSLng),
+    );
+    final markerV =NMarker(
+      id: "via",
+      position: NLatLng(detail.projectVLat, detail.projectVLng),
+    );
+    final markerD =NMarker(
+      id: "destination",
+      position: NLatLng(detail.projectDLat, detail.projectDLng),
+    );
+
+    final onMarkerinfoWindowS = NInfoWindow.onMarker(
+      id: markerS.info.id,
+      text: "출발지: ${detail.projectSName}",
+    );
+    final onMarkerinfoWindowV = NInfoWindow.onMarker(
+      id: markerV.info.id,
+      text: "경유지: ${detail.projectVName}",
+    );
+    final onMarkerinfoWindowD = NInfoWindow.onMarker(
+      id: markerD.info.id,
+      text: "도착지: ${detail.projectDName}",
+    );
     return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -208,16 +260,23 @@ class _CrewProjectDetailScreenState extends State<CrewProjectDetailScreen> {
                 Text('경유지 : ${detail.projectVName}'),
                 Text('목적지 : ${detail.projectDName}'),
                 SizedBox(
-                  /*height: 200,  // 지도의 높이를 설정합니다.
-                  child: NaverMap(
-                    initialCameraPosition: CameraPosition(
-                      target: LatLng(detail.projectSLat, detail.projectSLng),  // 초기 위치를 출발지로 설정합니다.
-                      zoom: 13,  // 초기 줌 레벨을 설정합니다.
-                    ),
-                    markers: markers,  // 위에서 정의한 마커 리스트를 사용합니다.
-                    onMapCreated: onMapCreated,
-                  ),*/
                   height: 10,
+                ),
+                Container(
+                  height: 200,  // 지도의 높이 설정
+                  child: NaverMap(
+                    onMapReady: (controller) {
+                      controller.updateCamera(
+                          NCameraUpdate.scrollAndZoomTo(
+                              target: NLatLng(detail.projectSLat, detail.projectSLng)
+                          )
+                      );
+                      controller.addOverlayAll({markerS, markerV, markerD});
+                      markerS.openInfoWindow(onMarkerinfoWindowS);
+                      markerV.openInfoWindow(onMarkerinfoWindowV);
+                      markerD.openInfoWindow(onMarkerinfoWindowD);
+                    },
+                  ),
                 ),
                 Divider(),
                 Text('날짜', style: TextStyle(

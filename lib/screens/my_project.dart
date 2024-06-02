@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'dart:convert';
 
 class MyProject extends StatefulWidget {
@@ -44,39 +45,69 @@ class _MyProjectState extends State<MyProject> with SingleTickerProviderStateMix
   }
 }
 
-class ProjectList extends StatelessWidget {
+class ProjectList extends StatefulWidget {
   final bool isUpcoming;
 
   ProjectList({required this.isUpcoming});
 
-  // 임시 데이터를 위한 리스트 생성
-  final List<Map<String, dynamic>> mockProjects = [
-    {
-      'title': '리사이클링 프로젝트',
-      'description': '재활용 가능한 자원을 수집하는 프로젝트입니다.',
-      'status': '진행 예정'
-    },
-    {
-      'title': '공원 청소 프로젝트',
-      'description': '지역 공원을 청소하는 커뮤니티 활동입니다.',
-      'status': '진행 완료'
+  @override
+  _ProjectListState createState() => _ProjectListState();
+}
+
+class _ProjectListState extends State<ProjectList> {
+  late Future<List<Map<String, dynamic>>> futureProjects;
+
+  Future<List<Map<String, dynamic>>> fetchProjects() async {
+    String url = '${dotenv.env['NGROK_URL']}/mypage/myplogging';
+    var response = await http.get(Uri.parse(url));
+    if (response.statusCode == 200) {
+      var projectsJson = json.decode(utf8.decode(response.bodyBytes)) as List;
+      return projectsJson.map((p) => p as Map<String, dynamic>).toList();
+    } else {
+      throw Exception('Failed to load projects');
     }
-  ];
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    futureProjects = fetchProjects();
+  }
 
   @override
   Widget build(BuildContext context) {
-    List<Map<String, dynamic>> filteredProjects = mockProjects.where((project) {
-      return (isUpcoming && project['status'] == '진행 예정') || (!isUpcoming && project['status'] == '진행 완료');
-    }).toList();
+    return FutureBuilder<List<Map<String, dynamic>>>(
+      future: futureProjects,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.done) {
+          if (snapshot.hasData) {
+            var filteredProjects = snapshot.data!.where((project) {
+              return (widget.isUpcoming && project['isPastProject'] == 'N') || (!widget.isUpcoming && project['isPastProject'] == 'Y');
+            }).toList();
 
-    return ListView.builder(
-      itemCount: filteredProjects.length,
-      itemBuilder: (context, index) {
-        return ListTile(
-          title: Text(filteredProjects[index]['title'], style: TextStyle(fontWeight: FontWeight.bold)),
-          subtitle: Text(filteredProjects[index]['description']),
-        );
+            return ListView.builder(
+              itemCount: filteredProjects.length,
+              itemBuilder: (context, index) {
+                var project = filteredProjects[index];
+                return ListTile(
+                  title: Text(project['projectTitle'], style: TextStyle(fontWeight: FontWeight.bold)),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(project['projectDate']),
+                      Text(project['crewName'], style: TextStyle(color: Colors.grey))
+                    ],
+                  ),
+                );
+              },
+            );
+          } else if (snapshot.hasError) {
+            return Text('Error: ${snapshot.error}');
+          }
+        }
+        return Center(child: CircularProgressIndicator());
       },
     );
   }
 }
+
