@@ -5,14 +5,13 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
 import 'package:kakao_flutter_sdk_user/kakao_flutter_sdk_user.dart';
+import 'package:clean_way/token_manager.dart' as myToken;
 
 import 'screens/create_project_screen.dart';
-import 'screens/create_report_screen.dart';
 import 'screens/create_report_copy_screen.dart';
 import 'screens/project_detail_screen.dart';
 import 'widgets/bottom_navigation.dart';
 import 'screens/crew.dart';
-import 'screens/route.dart';
 import 'screens/my.dart';
 
 void main() async {
@@ -32,6 +31,9 @@ void main() async {
           print("네이버 맵 인증오류: $e");
         }
     );
+
+    await myToken.TokenManager.instance.init();
+
     runApp(const MyApp());
   } catch (e) {
     print('환경변수 로드 실패: $e');
@@ -212,13 +214,13 @@ class _MainScreenState extends State<MainScreen> {
       case 1:
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => CrewScreen()),
+          MaterialPageRoute(builder: (context) => MainScreen()),
         );
         break;
       case 0:
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => MainScreen()),
+          MaterialPageRoute(builder: (context) => CrewScreen()),
         );
         break;
       case 2:

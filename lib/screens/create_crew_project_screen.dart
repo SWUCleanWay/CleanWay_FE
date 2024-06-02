@@ -261,8 +261,8 @@ class _CreateCrewProjectScreenState extends State<CreateCrewProjectScreen> {
               SizedBox(height: 16.0),
               ...[
                 '직접 설정하기',
-                '내 루트 불러오기',
-                '내 장소 불러오기'
+                // '내 루트 불러오기',
+                // '내 장소 불러오기'
               ].map((String value) {
                 return RadioListTile<String>(
                   title: Text(value),
