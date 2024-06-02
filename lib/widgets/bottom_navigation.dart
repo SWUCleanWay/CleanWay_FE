@@ -13,22 +13,23 @@ class BottomNavigation extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BottomNavigationBar(
-      backgroundColor: Color(0xFF588100),
+      // backgroundColor: Color(0xFF588100),
       selectedItemColor: Colors.grey,
       unselectedItemColor: Colors.grey,
       items: const <BottomNavigationBarItem>[
-        BottomNavigationBarItem(
-          icon: Icon(Icons.home),
-          label: '홈',
-        ),
         BottomNavigationBarItem(
           icon: Icon(Icons.group),
           label: '크루',
         ),
         BottomNavigationBarItem(
-          icon: Icon(Icons.route),
-          label: '루트',
+          icon: Icon(Icons.home),
+          label: '홈',
         ),
+
+        // BottomNavigationBarItem(
+        //   icon: Icon(Icons.route),
+        //   label: '루트',
+        // ),
         BottomNavigationBarItem(
           icon: Icon(Icons.person),
           label: 'MY',

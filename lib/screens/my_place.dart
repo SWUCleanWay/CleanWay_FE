@@ -26,8 +26,8 @@ class Spot {
       reportNumber: json['reportNumber'],
       userNumber: json['userNumber'],
       spotNumber: json['spotNumber'],
-      spotLat: json['spotLat'].toDouble(),
-      spotLng: json['spotIng'].toDouble(),
+      spotLat: json['spotLat']??0.0,
+      spotLng: json['spotIng']??0.0,
       spotName: json['spotName'],
     );
   }
@@ -52,7 +52,7 @@ class _MyPlaceState extends State<MyPlace> {
     var response = await http.get(Uri.parse(url));
 
     if (response.statusCode == 200) {
-      List<dynamic> spotList = jsonDecode(response.body);
+      List<dynamic> spotList = json.decode(utf8.decode(response.bodyBytes));
       return spotList.map((json) => Spot.fromJson(json)).toList();
     } else {
       throw Exception('Failed to load spots');

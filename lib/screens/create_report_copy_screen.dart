@@ -154,7 +154,7 @@ class _CreateReportCopyScreenState extends State<CreateReportCopyScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('제보하기copy'),
+        title: Text('제보하기'),
         leading: IconButton(
           icon: Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),

@@ -156,15 +156,13 @@ class _CrewScreenState extends State<CrewScreen> {
         },
       ),
       bottomNavigationBar: BottomNavigation(
-        selectedIndex: 1,
+        selectedIndex: 0,
         onItemSelected: (index) {
-          if (index == 0) {
+          if (index == 1) {
             Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => MainScreen()));
-          } else if (index == 1) {
+          } else if (index == 0) {
             // 현재 화면 유지
           } else if (index == 2) {
-            Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => RouteScreen()));
-          } else if (index == 3) {
             Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => MyScreen()));
           }
         },

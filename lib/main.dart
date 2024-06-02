@@ -120,22 +120,21 @@ class _MainScreenState extends State<MainScreen> {
 
   Future<void> fetchReports() async {
     String? baseUrl = dotenv.env['NGROK_URL'];
-
     var url = Uri.parse('${baseUrl}/report/list');
     try {
-      print(baseUrl);
       var response = await http.get(url);
       if (response.statusCode == 200) {
         var data = jsonDecode(utf8.decode(response.bodyBytes)) as List;
         setState(() {
           _reportData = data.map<Map<String, dynamic>>((item) {
             var imageUrl = item['imageUrl'] as String?;
-              imageUrl = '$baseUrl$imageUrl';
+            imageUrl = '$baseUrl$imageUrl';
             return {
               'location': item['spotName'],
               'date': item['reportDate'],
               'issue': item['keywordName'],
               'imageUrl': imageUrl,
+              'spotNumber': item['spotNumber'],  // 여기에서 spotNumber를 처리
             };
           }).toList();
         });
@@ -147,6 +146,26 @@ class _MainScreenState extends State<MainScreen> {
     }
   }
 
+  Future<void> saveSpot(int spotNumber) async {
+    var url = Uri.parse('${dotenv.env['NGROK_URL']}/report/saveSpot/${spotNumber}');
+    try {
+      var response = await http.post(url);
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text("내 장소에 성공적으로 등록됐습니다."),
+          backgroundColor: Colors.grey,
+        ));
+      } else {
+        throw Exception('Failed to save spot');
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text("내 장소에 저장을 실패했습니다."),
+        backgroundColor: Colors.grey,
+      ));
+      print('Error saving spot: $e');
+    }
+  }
 
   Future<void> fetchCrews() async {
     var url = Uri.parse('${dotenv.env['NGROK_URL']}/crew/list');
@@ -190,25 +209,19 @@ class _MainScreenState extends State<MainScreen> {
       _selectedIndex = index;
     });
     switch (index) {
-      case 0:
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => MainScreen()),
-        );
-        break;
       case 1:
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => CrewScreen()),
         );
         break;
-      case 2:
+      case 0:
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => RouteScreen()),
+          MaterialPageRoute(builder: (context) => MainScreen()),
         );
         break;
-      case 3:
+      case 2:
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => MyScreen()),
@@ -324,40 +337,58 @@ class _MainScreenState extends State<MainScreen> {
                         image: NetworkImage(post['imageUrl']),
                         fit: BoxFit.cover,
                         colorFilter: ColorFilter.mode(
-                          Colors.black.withOpacity(0.6), // 배경 이미지 어둡게 처리
+                          Colors.black.withOpacity(0.6),
                           BlendMode.darken,
                         ),
-                      ) : null, // 이미지 URL이 없는 경우 null
-                      color: post['imageUrl'] == null ? Colors.grey[300] : null, // 이미지 URL이 없으면 회색 배경
-                      borderRadius: BorderRadius.circular(10), // 둥근 모서리
+                      ) : null,
+                      color: post['imageUrl'] == null ? Colors.grey[300] : null,
+                      borderRadius: BorderRadius.circular(10),
                     ),
-                    child: ListTile(
-                      title: Text(
-                        post['location'],
-                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 25),
-                      ),
-                      subtitle: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: <Widget>[
-                          SizedBox(height: 10,),
-                          Text(
-                            post['date'],
-                            style: TextStyle(color: Colors.white, fontSize: 20),
+                    child: Stack(
+                      children: [
+                        ListTile(
+                          title: Text(
+                            post['location'],
+                            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 25),
                           ),
-                          SizedBox(height: 10,),
-                          Container(
-                            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 5), // 텍스트 주변의 패딩
-                            decoration: BoxDecoration(
-                              border: Border.all(color: Colors.white),
-                              borderRadius: BorderRadius.circular(20), // 둥근 모서리의 반경
-                            ),
-                            child: Text(
-                              post['issue'],
-                              style: TextStyle(color: Colors.white, fontSize: 18),
-                            ),
-                          )
-                        ],
-                      ),
+                          subtitle: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: <Widget>[
+                              SizedBox(height: 10),
+                              Text(
+                                post['date'],
+                                style: TextStyle(color: Colors.white, fontSize: 20),
+                              ),
+                              SizedBox(height: 10),
+                              Container(
+                                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                                decoration: BoxDecoration(
+                                  border: Border.all(color: Colors.white),
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: Text(
+                                  post['issue'],
+                                  style: TextStyle(color: Colors.white, fontSize: 18),
+                                ),
+                              )
+                            ],
+                          ),
+                        ),
+                        Positioned(
+                          top: 10,
+                          right: 10,
+                          child: IconButton(
+                            icon: Icon(Icons.favorite_border, color: Colors.white),
+                            onPressed: () {
+                              if (post['spotNumber'] != null && post['spotNumber'] > 0) {
+                                saveSpot(post['spotNumber']);
+                              } else {
+                                print("Invalid or missing spotNumber: ${post['spotNumber']}");
+                              }
+                            },
+                          ),
+                        ),
+                      ],
                     ),
                   );
                 }
