@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'crew_detail_screen.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
+import 'package:clean_way/token_manager.dart' as myToken;
 
 class CrewDetail {
   final String title;
@@ -92,8 +93,18 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
   }
 
   Future<CrewDetail> fetchCrewDetail() async {
-    String url = '${dotenv.env['NGROK_URL']}/crew/detail/${widget.crewNumber}';
-    var response = await http.get(Uri.parse(url));
+    String? token = await myToken.TokenManager.instance.getToken();
+    String? baseUrl = dotenv.env['NGROK_URL'];
+    //String url = '${dotenv.env['NGROK_URL']}/crew/detail/${widget.crewNumber}';
+    var url = Uri.parse('$baseUrl/crew/detail/${widget.crewNumber}');
+    // var response = await http.get(Uri.parse(url));
+    var response = await http.get(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
     if (response.statusCode == 200) {
       List<dynamic> crewList = json.decode(utf8.decode(response.bodyBytes));
       // crewNumber에 해당하는 객체를 찾습니다.
@@ -118,9 +129,19 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
 
   Future<void> joinCrew() async {
     if (!isJoined) { // 아직 참여하지 않았다면
-      String url = '${dotenv.env['NGROK_URL']}/crew/join/${widget.crewNumber}';
+      // String url = '${dotenv.env['NGROK_URL']}/crew/join/${widget.crewNumber}';
+      String? token = await myToken.TokenManager.instance.getToken();
+      String? baseUrl = dotenv.env['NGROK_URL'];
+      var url = Uri.parse('$baseUrl/crew/join/${widget.crewNumber}');
       try {
-        var response = await http.post(Uri.parse(url));
+        // var response = await http.post(Uri.parse(url));
+        var response = await http.post(
+          url,
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer $token',
+          },
+        );
         if (response.statusCode == 303) {
           setState(() {
             isJoined = true;
