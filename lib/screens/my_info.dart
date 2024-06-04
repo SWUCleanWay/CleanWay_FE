@@ -32,11 +32,11 @@ class _MyInfoState extends State<MyInfo> {
     print('사용할 토큰: $token');
     try {
       var response = await http.get(
-        url,
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
+      url,
+      headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer $token',
+      },
       );
 
       if (response.statusCode == 200) {
@@ -62,15 +62,15 @@ class _MyInfoState extends State<MyInfo> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
             ListTile(
-              title: Text('Email'),
+              title: Text('이메일'),
               subtitle: Text(userInfo['userEmail'] ?? 'Not available'),
             ),
             ListTile(
-              title: Text('Nickname'),
+              title: Text('닉네임'),
               subtitle: Text(userInfo['userNickname'] ?? 'Not available'),
             ),
             ListTile(
-              title: Text('My Plogging'),
+              title: Text('참여 횟수'),
               subtitle: Text('${userInfo['myPlogging']} times'),
             ),
           ],

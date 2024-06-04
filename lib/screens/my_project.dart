@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:clean_way/token_manager.dart' as myToken;
 import 'dart:convert';
 
 class MyProject extends StatefulWidget {
@@ -58,8 +59,19 @@ class _ProjectListState extends State<ProjectList> {
   late Future<List<Map<String, dynamic>>> futureProjects;
 
   Future<List<Map<String, dynamic>>> fetchProjects() async {
-    String url = '${dotenv.env['NGROK_URL']}/mypage/myplogging';
-    var response = await http.get(Uri.parse(url));
+    String? token = await myToken.TokenManager.instance.getToken();
+    String? baseUrl = dotenv.env['NGROK_URL'];
+    //String url = '${dotenv.env['NGROK_URL']}/mypage/myplogging';
+    var url = Uri.parse('$baseUrl/mypage/myplogging');
+
+    //var response = await http.get(Uri.parse(url));
+    var response = await http.get(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
     if (response.statusCode == 200) {
       var projectsJson = json.decode(utf8.decode(response.bodyBytes)) as List;
       return projectsJson.map((p) => p as Map<String, dynamic>).toList();

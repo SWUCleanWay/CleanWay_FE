@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'dart:convert';
+import 'package:clean_way/token_manager.dart' as myToken;
 
 import '/widgets/bottom_navigation.dart';
 import '/main.dart';
@@ -51,11 +52,21 @@ class _CrewScreenState extends State<CrewScreen> {
 
   Future<List<Crew>> fetchCrews(String searchWord) async {
     String baseUrl = '${dotenv.env['NGROK_URL']}/crew-project/mycrew';
-    String url = searchWord.isNotEmpty ? '$baseUrl/search?searchWord=${searchWord}' : baseUrl;
+    //String url = searchWord.isNotEmpty ? '$baseUrl/search?searchWord=${searchWord}' : baseUrl;
+    String? token = await myToken.TokenManager.instance.getToken();
 
+    var url = Uri.parse('$baseUrl/search?searchWord=${searchWord}');
     print('Fetching crews with URL: $url');
 
-    var response = await http.get(Uri.parse(url));
+    // var response = await http.get(Uri.parse(url));
+    var response = await http.get(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+
     print('Response Status: ${response.statusCode}');
 
     if (response.statusCode == 200) {

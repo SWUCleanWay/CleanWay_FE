@@ -64,12 +64,15 @@ class _MyScreenState extends State<MyScreen> {
 
   Future<void> sendLoginDataToServer(User user) async {
     String? baseUrl = dotenv.env['NGROK_URL'];
+    String? token = await myToken.TokenManager.instance.getToken();
+
     var url = Uri.parse('$baseUrl/kakao/login');
 
     try {
       var response = await http.post(
         url,
-        headers: {'Content-Type': 'application/json'},
+        headers: {'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',},
         body: jsonEncode({
           'id': user.id,
           'nickname': user.kakaoAccount?.profile?.nickname,

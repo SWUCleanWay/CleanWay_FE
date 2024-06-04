@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
+import 'package:clean_way/token_manager.dart' as myToken;
 import  'crew_detail_screen.dart';
 
 class CrewDetail {
@@ -88,13 +89,15 @@ class _CrewProjectDetailScreenState extends State<CrewProjectDetailScreen> {
   }
 
   Future<CrewDetail> fetchCrewDetail() async {
+    String? token = await myToken.TokenManager.instance.getToken();
     String url = '${dotenv.env['NGROK_URL']}/crew-project/detail/${widget.crewNumber}/${widget.crewProjectNumber}';
     try {
       var response = await http.get(
         Uri.parse(url),
         headers: {
           'Accept-Charset': 'UTF-8',
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
         },
       );
       print("Response status: ${response.statusCode}");

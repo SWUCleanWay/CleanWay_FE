@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-
+import 'package:clean_way/token_manager.dart' as myToken;
 import './crew_detail_screen.dart';
 import '/widgets/location_search.dart';
 
@@ -131,13 +131,15 @@ class _CreateCrewProjectScreenState extends State<CreateCrewProjectScreen> {
     registerCrewProjectData['cleanCrewProjectDto']['projectTime'] = selectedTime.format(context);
 
     String jsonBody = json.encode(registerCrewProjectData);
+    String? token = await myToken.TokenManager.instance.getToken();
     print("Sending data: $jsonBody"); // 데이터 보내기 전 로그 출력
 
     // HTTP POST 요청 실행
     try {
       http.Response response = await http.post(
         Uri.parse('${dotenv.env['NGROK_URL']}/crew-project/${widget.crewNumber}/add'),
-        headers: {'Content-Type': 'application/json; charset=UTF-8'},
+        headers: {'Content-Type': 'application/json; charset=UTF-8',
+          'Authorization': 'Bearer $token',},
         body: jsonBody,
       );
 

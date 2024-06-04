@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'dart:convert';
 import './crew_project_detail_screen.dart';
+import 'package:clean_way/token_manager.dart' as myToken;
 
 class Project {
   final int crewProjectNumber;
@@ -51,8 +52,18 @@ class _CrewDetailPageState extends State<CrewDetailPage> {
   }
 
   Future<Map<String, dynamic>> fetchProjects() async {
-    String url = '${dotenv.env['NGROK_URL']}/crew-project/team/${widget.crewNumber}';
-    var response = await http.get(Uri.parse(url));
+    String? baseUrl = dotenv.env['NGROK_URL'];
+    var url = Uri.parse('$baseUrl/crew-project/team/${widget.crewNumber}');
+    // String url = '${dotenv.env['NGROK_URL']}/crew-project/team/${widget.crewNumber}';
+    String? token = await myToken.TokenManager.instance.getToken();
+    // var response = await http.get(Uri.parse(url));
+    var response = await http.get(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
     if (response.statusCode == 200) {
       return json.decode(utf8.decode(response.bodyBytes));
     } else {

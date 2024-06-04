@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:clean_way/token_manager.dart' as myToken;
 import 'dart:convert';
 
 
@@ -48,9 +49,18 @@ class _MyPlaceState extends State<MyPlace> {
   }
 
   Future<List<Spot>> fetchSpots() async {
-    String url = '${dotenv.env['NGROK_URL']}/mypage/myspot';
-    var response = await http.get(Uri.parse(url));
-
+    // String url = '${dotenv.env['NGROK_URL']}/mypage/myspot';
+    String? token = await myToken.TokenManager.instance.getToken();
+    String? baseUrl = dotenv.env['NGROK_URL'];
+    var url = Uri.parse('$baseUrl/mypage/myspot');
+    // var response = await http.get(Uri.parse(url));
+    var response = await http.get(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
     if (response.statusCode == 200) {
       List<dynamic> spotList = json.decode(utf8.decode(response.bodyBytes));
       return spotList.map((json) => Spot.fromJson(json)).toList();
