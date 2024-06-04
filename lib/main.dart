@@ -122,9 +122,17 @@ class _MainScreenState extends State<MainScreen> {
 
   Future<void> fetchReports() async {
     String? baseUrl = dotenv.env['NGROK_URL'];
+    String? token = await myToken.TokenManager.instance.getToken();
     var url = Uri.parse('${baseUrl}/report/list');
     try {
-      var response = await http.get(url);
+      // var response = await http.get(url);
+      var response = await http.get(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
       if (response.statusCode == 200) {
         var data = jsonDecode(utf8.decode(response.bodyBytes)) as List;
         setState(() {
@@ -149,9 +157,18 @@ class _MainScreenState extends State<MainScreen> {
   }
 
   Future<void> saveSpot(int spotNumber) async {
-    var url = Uri.parse('${dotenv.env['NGROK_URL']}/report/saveSpot/${spotNumber}');
+    String? baseUrl = dotenv.env['NGROK_URL'];
+    String? token = await myToken.TokenManager.instance.getToken();
+    var url = Uri.parse('${baseUrl}/report/saveSpot/${spotNumber}');
+    // var url = Uri.parse('${dotenv.env['NGROK_URL']}/report/saveSpot/${spotNumber}');
     try {
-      var response = await http.post(url);
+      var response = await http.post(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
       if (response.statusCode == 200 || response.statusCode == 201) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text("내 장소에 성공적으로 등록됐습니다."),
@@ -170,9 +187,19 @@ class _MainScreenState extends State<MainScreen> {
   }
 
   Future<void> fetchCrews() async {
-    var url = Uri.parse('${dotenv.env['NGROK_URL']}/crew/list');
+    // var url = Uri.parse('${dotenv.env['NGROK_URL']}/crew/list');
+    String? baseUrl = dotenv.env['NGROK_URL'];
+    String? token = await myToken.TokenManager.instance.getToken();
+    var url = Uri.parse('${baseUrl}/crew/list');
     try {
-      var response = await http.get(url);
+      // var response = await http.get(url);
+      var response = await http.get(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
       if (response.statusCode == 200) {
         print('success');
         var data = jsonDecode(utf8.decode(response.bodyBytes)) as List;
@@ -327,7 +354,7 @@ class _MainScreenState extends State<MainScreen> {
                           Text('모집인원: ${post['members']}/${post['capacity']} 명'),
                         ],
                       ),
-                    ),
+                    )
                   );
                 } else {
                   // 제보 글
