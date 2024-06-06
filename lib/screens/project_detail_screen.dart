@@ -303,6 +303,18 @@ Widget buildDetailLayout(CrewDetail detail) {
     id: markerD.info.id,
     text: "도착지: ${detail.projectDName}",
   );
+
+  final polyline = NPolylineOverlay(
+    id: "route",
+    coords: [
+      NLatLng(detail.projectSLat, detail.projectSLng),
+      NLatLng(detail.projectVLat, detail.projectVLng),
+      NLatLng(detail.projectDLat, detail.projectDLng),
+    ],
+    color: Colors.blue,
+    width: 5,
+  );
+
     return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -345,7 +357,7 @@ Widget buildDetailLayout(CrewDetail detail) {
                           target: NLatLng(detail.projectSLat, detail.projectSLng)
                       )
                   );
-                  controller.addOverlayAll({markerS, markerV, markerD});
+                  controller.addOverlayAll({markerS, markerV, markerD, polyline});
                   markerS.openInfoWindow(onMarkerinfoWindowS);
                   markerV.openInfoWindow(onMarkerinfoWindowV);
                   markerD.openInfoWindow(onMarkerinfoWindowD);
