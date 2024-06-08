@@ -328,9 +328,24 @@ class _MainScreenState extends State<MainScreen> {
               ],
             ),
           ),
+          SizedBox(height:20),
+          if (_isCrewPostSelected)
+            Container(
+              padding: const EdgeInsets.all(8.0),
+              color: Colors.lightGreen[100],
+              child: Text(
+                '플로깅 기본 준비물: 집게, 장갑, 쓰레기 봉투',
+                style: TextStyle(
+                  color: Colors.black,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          SizedBox(height:10),
           Expanded(
             child: ListView.builder(
-              padding: const EdgeInsets.all(10.0),
+              // padding: const EdgeInsets.all(10.0),
               itemCount: _currentList.length,
               itemBuilder: (context, index) {
                 var post = _currentList[index];
@@ -338,38 +353,40 @@ class _MainScreenState extends State<MainScreen> {
                 if (_isCrewPostSelected) {
                   // 크루 모집 글
                   return Card(
-                    margin: const EdgeInsets.symmetric(vertical: 10),
-                    child: ListTile(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (context) => ProjectDetailScreen(crewNumber: post['crewNumber'], crewName:post['crewName'], crewProjectNumber: post['crewProjectNumber'])),
-                        );
-                      },
-                      title: Text(post['title']),
-                      subtitle: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: <Widget>[
-                          Text('작성일: ${post['date']}'),
-                          Text('모집인원: ${post['members']}/${post['capacity']} 명'),
-                        ],
-                      ),
-                    )
+                      margin: const EdgeInsets.symmetric(vertical: 10, horizontal: 20),
+                      child: ListTile(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => ProjectDetailScreen(crewNumber: post['crewNumber'], crewName:post['crewName'], crewProjectNumber: post['crewProjectNumber'])),
+                          );
+                        },
+                        title: Text(post['title']),
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: <Widget>[
+                            Text('작성일: ${post['date']}'),
+                            Text('모집인원: ${post['members']}/${post['capacity']} 명'),
+                          ],
+                        ),
+                      )
                   );
                 } else {
                   // 제보 글
                   return Container(
-                    margin: const EdgeInsets.symmetric(vertical: 10),
+                    margin: const EdgeInsets.symmetric(vertical: 10, horizontal: 20),
                     height: 200,
                     decoration: BoxDecoration(
-                      image: post['imageUrl'] != null ? DecorationImage(
+                      image: post['imageUrl'] != null
+                          ? DecorationImage(
                         image: NetworkImage(post['imageUrl']),
                         fit: BoxFit.cover,
                         colorFilter: ColorFilter.mode(
                           Colors.black.withOpacity(0.6),
                           BlendMode.darken,
                         ),
-                      ) : null,
+                      )
+                          : null,
                       color: post['imageUrl'] == null ? Colors.grey[300] : null,
                       borderRadius: BorderRadius.circular(10),
                     ),
@@ -377,16 +394,23 @@ class _MainScreenState extends State<MainScreen> {
                       children: [
                         ListTile(
                           title: Text(
-                            post['location'],
-                            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 25),
+                            post['location'] ?? '중랑천',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 25,
+                            ),
                           ),
                           subtitle: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: <Widget>[
                               SizedBox(height: 10),
                               Text(
-                                post['date'],
-                                style: TextStyle(color: Colors.white, fontSize: 20),
+                                post['date'] ?? '2024/06/07',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 20,
+                                ),
                               ),
                               SizedBox(height: 10),
                               Container(
@@ -396,8 +420,11 @@ class _MainScreenState extends State<MainScreen> {
                                   borderRadius: BorderRadius.circular(20),
                                 ),
                                 child: Text(
-                                  post['issue'],
-                                  style: TextStyle(color: Colors.white, fontSize: 18),
+                                  post['issue'] ?? 'No issue reported',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 18,
+                                  ),
                                 ),
                               )
                             ],

@@ -13,7 +13,6 @@ import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'dart:convert';
 
-
 class MyScreen extends StatefulWidget {
   @override
   _MyScreenState createState() => _MyScreenState();
@@ -31,9 +30,11 @@ class _MyScreenState extends State<MyScreen> {
 
   void checkIfLoggedIn() async {
     isLoggedIn = await AuthApi.instance.hasToken();
+    print('로그인 여부 확인: $isLoggedIn');
     if (isLoggedIn) {
       try {
         user = await UserApi.instance.me();
+        print('사용자 정보 가져오기 성공: ${user?.kakaoAccount?.profile?.nickname}');
       } catch (error) {
         print('사용자 정보 가져오기 실패: $error');
         isLoggedIn = false;
@@ -45,12 +46,14 @@ class _MyScreenState extends State<MyScreen> {
   void loginWithKakao() async {
     try {
       OAuthToken tokenResult = await UserApi.instance.loginWithKakaoTalk();
+      print('카카오톡 로그인 성공: $tokenResult');
       if (tokenResult != null) {
-        var user = await UserApi.instance.me();
+        user = await UserApi.instance.me();
+        print('사용자 정보: ${user?.kakaoAccount?.profile?.nickname}');
         isLoggedIn = true;
 
         // 서버에 로그인 데이터를 전송하고 JWT 토큰을 받아 저장합니다.
-        await sendLoginDataToServer(user);
+        await sendLoginDataToServer(user!);
 
         // 상태를 업데이트합니다.
         setState(() {});
@@ -71,8 +74,10 @@ class _MyScreenState extends State<MyScreen> {
     try {
       var response = await http.post(
         url,
-        headers: {'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',},
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
         body: jsonEncode({
           'id': user.id,
           'nickname': user.kakaoAccount?.profile?.nickname,
@@ -146,6 +151,7 @@ class _MyScreenState extends State<MyScreen> {
             TextButton(
               child: Text('저장'),
               onPressed: () {
+                print('입력된 닉네임: ${nicknameController.text}');
                 updateNickname(nicknameController.text);
                 Navigator.of(context).pop();
               },
@@ -157,13 +163,15 @@ class _MyScreenState extends State<MyScreen> {
   }
 
   Future<void> updateNickname(String newNickname) async {
+    print('닉네임 업데이트 시도...');
+    print('새 닉네임: $newNickname');
     String? token = await myToken.TokenManager.instance.getToken();
     String? baseUrl = dotenv.env['NGROK_URL'];
     var url = Uri.parse('$baseUrl/mypage/info');
-
     print('사용할 토큰: $token');  // 토큰이 올바르게 전달되는지 확인
 
     var requestBody = jsonEncode({'newNickname': newNickname});
+    print('요청 본문: $requestBody'); // 요청 본문을 로그에 출력
 
     try {
       var response = await http.patch(
@@ -180,6 +188,15 @@ class _MyScreenState extends State<MyScreen> {
 
       if (response.statusCode == 200) {
         print("닉네임이 성공적으로 변경되었습니다.");
+
+        // 닉네임이 변경되었으므로 사용자 정보를 다시 가져옵니다.
+        try {
+          user = await UserApi.instance.me();
+          print('변경된 사용자 정보: ${user?.kakaoAccount?.profile?.nickname}');
+          setState(() {});
+        } catch (error) {
+          print('사용자 정보 가져오기 실패: $error');
+        }
       } else {
         print("닉네임 변경 실패: ${response.body}");
       }
@@ -203,7 +220,6 @@ class _MyScreenState extends State<MyScreen> {
                 onPressed: loginWithKakao,
                 child: Text('카카오톡으로 로그인하기'),
               ),
-
             ] else ...[
               CircleAvatar(
                 radius: 40,
@@ -215,7 +231,7 @@ class _MyScreenState extends State<MyScreen> {
               ),
               SizedBox(height: 20),
               Text(
-                user?.kakaoAccount?.profile?.nickname ?? '이승은',
+                user?.kakaoAccount?.profile?.nickname ?? '없음',
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               ),
               TextButton(

@@ -49,7 +49,6 @@ class _MyPlaceState extends State<MyPlace> {
   }
 
   Future<List<Spot>> fetchSpots() async {
-    // String url = '${dotenv.env['NGROK_URL']}/mypage/myspot';
     String? token = await myToken.TokenManager.instance.getToken();
     String? baseUrl = dotenv.env['NGROK_URL'];
     var url = Uri.parse('$baseUrl/mypage/myspot');

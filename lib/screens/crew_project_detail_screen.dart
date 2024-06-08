@@ -4,7 +4,6 @@ import 'dart:convert';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
 import 'package:clean_way/token_manager.dart' as myToken;
-import  'crew_detail_screen.dart';
 
 class CrewDetail {
   final String title;
@@ -17,6 +16,7 @@ class CrewDetail {
   final int participants;
   final int capacity;
   final String additionalInfo;
+  final String isPastProject;
   final String projectSName, projectVName, projectDName;
   final double projectSLng, projectSLat, projectVLng, projectVLat, projectDLng, projectDLat;
 
@@ -31,6 +31,7 @@ class CrewDetail {
     required this.participants,
     required this.capacity,
     required this.additionalInfo,
+    required this.isPastProject,
     required this.projectSName,
     required this.projectVName,
     required this.projectDName,
@@ -46,24 +47,24 @@ class CrewDetail {
     return CrewDetail(
       title: json['projectTitle'] as String? ?? 'Unknown',
       author: json['userNickname'] as String? ?? 'Unknown',
-      createdAt: json['crewWriteTime'] as String? ?? 'Unknown',
+      createdAt: json['projectWriteTime'] as String? ?? 'Unknown',
       location: json['projectSName'] as String? ?? 'Unknown',
       route: json['projectDName'] as String? ?? 'Unknown',
       date: json['projectDate'] as String? ?? 'Unknown',
       time: json['projectTime'] as String? ?? 'Unknown',
-      participants: json['memberCount'] as int? ?? 0,
-      capacity: json['crewRecruitment'] as int? ?? 0,
-      additionalInfo: json['crewContent'] as String? ?? 'No additional info',
+      participants: json['projectMemberCount'] as int? ?? 0,
+      capacity: json['projectRecruitment'] as int? ?? 0,
+      additionalInfo: json['projectContent'] as String? ?? 'No additional info',
       projectSName: json['projectSName'] as String? ?? 'Unknown',
       projectVName: json['projectVName'] as String? ?? 'Unknown',
       projectDName: json['projectDName'] as String? ?? 'Unknown',
       projectDLat: json['projectDLat']?.toDouble() ?? 0.0,
       projectDLng: json['projectDLng']?.toDouble() ?? 0.0,
-      projectVLat: json['projecVLat']?.toDouble() ?? 0.0,
+      projectVLat: json['projectVLat']?.toDouble() ?? 0.0,
       projectVLng: json['projectVLng']?.toDouble() ?? 0.0,
       projectSLat: json['projectSLat']?.toDouble() ?? 0.0,
       projectSLng: json['projectSLng']?.toDouble() ?? 0.0,
-
+      isPastProject: json['isPastProject'] as String? ?? 'Unknown',
     );
   }
 }
@@ -80,7 +81,7 @@ class CrewProjectDetailScreen extends StatefulWidget {
 
 class _CrewProjectDetailScreenState extends State<CrewProjectDetailScreen> {
   late Future<CrewDetail> crewDetailFuture;
-  bool hasJoined = false;
+  bool isJoined = false;
 
   @override
   void initState() {
@@ -90,7 +91,8 @@ class _CrewProjectDetailScreenState extends State<CrewProjectDetailScreen> {
 
   Future<CrewDetail> fetchCrewDetail() async {
     String? token = await myToken.TokenManager.instance.getToken();
-    String url = '${dotenv.env['NGROK_URL']}/crew-project/detail/${widget.crewNumber}/${widget.crewProjectNumber}';
+    String url = '${dotenv.env['NGROK_URL']}/crew-project/detail/${widget
+        .crewNumber}/${widget.crewProjectNumber}';
     try {
       var response = await http.get(
         Uri.parse(url),
@@ -114,7 +116,8 @@ class _CrewProjectDetailScreenState extends State<CrewProjectDetailScreen> {
         }
       } else {
         print("Error fetching data: ${response.body}");
-        throw Exception('Failed to load crew details with status code ${response.statusCode}');
+        throw Exception('Failed to load crew details with status code ${response
+            .statusCode}');
       }
     } catch (e) {
       print("Error parsing data: $e");
@@ -122,29 +125,75 @@ class _CrewProjectDetailScreenState extends State<CrewProjectDetailScreen> {
     }
   }
 
-
   Future<void> joinProject() async {
-    if (!hasJoined) {  // Check if not already joined
-      String url = '${dotenv.env['NGROK_URL']}/crew-project/join/${widget.crewNumber}/${widget.crewProjectNumber}';
+    CrewDetail detail = await crewDetailFuture;
+    String? token = await myToken.TokenManager.instance.getToken();
+    String? baseUrl = dotenv.env['NGROK_URL'];
+    var url = Uri.parse('$baseUrl/crew/join/${widget.crewNumber}/${widget.crewProjectNumber}');
+
+    print("Joining project with URL: $url");
+    print("Token: $token");
+    print("isJoined: $isJoined");
+    print("isPastProject: ${detail.isPastProject}");
+
+    if (!isJoined && detail.isPastProject != "Y") {
       try {
-        var response = await http.post(Uri.parse(url));
-        if (response.statusCode == 303) {
+        var response = await http.post(
+          url,
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer $token',
+          },
+        );
+
+        print("Join project response status: ${response.statusCode}");
+        print("Join project response body: ${response.body}");
+
+        if (response.statusCode == 303 || response.statusCode == 200) {
           setState(() {
-            hasJoined = true;  // Update state to reflect join status
+            isJoined = true; // Update state to reflect join status
           });
+          if (mounted) {
+            print("Before showing success dialog");
+            showSuccessDialog('참여되었습니다.');
+            print("After showing success dialog");
+          }
         } else if (response.statusCode == 500) {
-          showErrorDialog('Failed to join the project. Please try again.');
+          showErrorDialog('참여에 실패했습니다.');
+        } else {
+          showErrorDialog('참여에 실패했습니다.');
         }
       } catch (e) {
+        print("Network error: $e");
         showErrorDialog('Network error: $e');
       }
     } else {
-      // 인증로직
-      // authenticateUser();
+      showErrorDialog('이미 참여했거나 지난 프로젝트입니다.');
     }
   }
 
+
+  void showSuccessDialog(String message) {
+    print("Success Dialog is about to show: $message");
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Success'),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () {
+              print("Success dialog OK button pressed");
+              Navigator.of(context).pop();
+            },
+            child: Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
   void showErrorDialog(String message) {
+    print("Showing Error Dialog: $message");
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -159,7 +208,6 @@ class _CrewProjectDetailScreenState extends State<CrewProjectDetailScreen> {
       ),
     );
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -188,10 +236,10 @@ class _CrewProjectDetailScreenState extends State<CrewProjectDetailScreen> {
       bottomNavigationBar: Padding(
         padding: EdgeInsets.all(8.0),
         child: ElevatedButton(
-          onPressed: joinProject, 
-          child: Text(hasJoined ? '인증하기' : '참여하기'),  
+          onPressed: joinProject,
+          child: Text(isJoined ? '참여됨' : '참여하기'),
           style: ElevatedButton.styleFrom(
-            backgroundColor: Theme.of(context).colorScheme.primary,
+            backgroundColor: isJoined ? Colors.grey : Theme.of(context).colorScheme.primary,
             foregroundColor: Colors.white,
             minimumSize: Size(double.infinity, 50),
             shape: RoundedRectangleBorder(
@@ -200,7 +248,6 @@ class _CrewProjectDetailScreenState extends State<CrewProjectDetailScreen> {
           ),
         ),
       ),
-
     );
   }
 
@@ -209,11 +256,11 @@ class _CrewProjectDetailScreenState extends State<CrewProjectDetailScreen> {
       id: "start",
       position: NLatLng(detail.projectSLat, detail.projectSLng),
     );
-    final markerV =NMarker(
+    final markerV = NMarker(
       id: "via",
       position: NLatLng(detail.projectVLat, detail.projectVLng),
     );
-    final markerD =NMarker(
+    final markerD = NMarker(
       id: "destination",
       position: NLatLng(detail.projectDLat, detail.projectDLng),
     );
@@ -230,6 +277,28 @@ class _CrewProjectDetailScreenState extends State<CrewProjectDetailScreen> {
       id: markerD.info.id,
       text: "도착지: ${detail.projectDName}",
     );
+
+    List<NLatLng> polylineCoords;
+    if (detail.projectVLat == 0.0 && detail.projectVLng == 0.0) {
+      polylineCoords = [
+        NLatLng(detail.projectSLat, detail.projectSLng),
+        NLatLng(detail.projectDLat, detail.projectDLng),
+      ];
+    } else {
+      polylineCoords = [
+        NLatLng(detail.projectSLat, detail.projectSLng),
+        NLatLng(detail.projectVLat, detail.projectVLng),
+        NLatLng(detail.projectDLat, detail.projectDLng),
+      ];
+    }
+
+    final polyline = NPolylineOverlay(
+      id: "route",
+      coords: polylineCoords,
+      color: Colors.blue,
+      width: 3,
+    );
+
     return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -260,23 +329,28 @@ class _CrewProjectDetailScreenState extends State<CrewProjectDetailScreen> {
                     fontSize: 16.0, fontWeight: FontWeight.bold)),
                 SizedBox(height: 10),
                 Text('출발지 : ${detail.projectSName}'),
-                Text('경유지 : ${detail.projectVName}'),
+                if (detail.projectVLat != 0.0 && detail.projectVLng != 0.0)
+                  Text('경유지 : ${detail.projectVName}'),
                 Text('목적지 : ${detail.projectDName}'),
-                SizedBox(
-                  height: 10,
-                ),
+                SizedBox(height: 10),
                 Container(
-                  height: 200,  // 지도의 높이 설정
+                  height: 200,
                   child: NaverMap(
                     onMapReady: (controller) {
                       controller.updateCamera(
-                          NCameraUpdate.scrollAndZoomTo(
-                              target: NLatLng(detail.projectSLat, detail.projectSLng)
-                          )
+                        NCameraUpdate.scrollAndZoomTo(
+                          target: NLatLng(detail.projectSLat, detail
+                              .projectSLng),
+                        ),
                       );
-                      controller.addOverlayAll({markerS, markerV, markerD});
+                      controller.addOverlayAll(
+                          {markerS, markerD, polyline});
                       markerS.openInfoWindow(onMarkerinfoWindowS);
-                      markerV.openInfoWindow(onMarkerinfoWindowV);
+                      if (detail.projectVLat != 0.0 &&
+                          detail.projectVLng != 0.0) {
+                        controller.addOverlay(markerV);
+                        markerV.openInfoWindow(onMarkerinfoWindowV);
+                      }
                       markerD.openInfoWindow(onMarkerinfoWindowD);
                     },
                   ),
