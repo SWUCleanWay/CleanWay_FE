@@ -36,28 +36,49 @@ class _CreateCrewProjectScreenState extends State<CreateCrewProjectScreen> {
 
   Map<String, dynamic> registerCrewProjectData = {
   "cleanCrewProjectDto": {
-    "crewProjectNumber": 0,
-    "crewNumber": 0,
-    "crewName":"string",
-    "projectWriteTime": "string",
-    "projectTitle": "string",
-    "projectContent": "string",
-    "projectRecruitment": 0,
-    "projectDate": "string",
-    "projectTime": "string",
-    "projectRoleNumber": 0,
-    "userNumber": 0,
-    "projectSLng": 0,
-    "projectSLat": 0,
-    "projectVLng": 0,
-    "projectVLat": 0,
-    "projectDLng": 0,
-    "projectDLat": 0,
-    "projectSName": "string",
-    "projectVName": "string",
-    "projectDName": "string"
-  }
-};
+  "crewProjectNumber": 0,
+  "crewNumber": 0,
+  "projectTitle": "",
+  "projectWriteTime": "",
+  "projectContent": "",
+  "projectRecruitment": 0,
+  "projectDate": "",
+  "projectTime": "",
+  "projectRoleNumber": 0,
+  "userNumber": 0,
+  "projectSLng": 0.0,
+  "projectSLat": 0.0,
+  "projectVLng": 0.0,
+  "projectVLat": 0.0,
+  "projectDLng": 0.0,
+  "projectDLat": 0.0,
+  "projectSName": "",
+  "projectVName": "",
+  "projectDName": "",
+  "projectV2Lng": 0.0,
+  "projectV2Lat": 0.0,
+  "projectV2Name": "",
+  "projectV3Lng": 0.0,
+  "projectV3Lat": 0.0,
+  "projectV3Name": "",
+  "projectTag1": "",
+  "projectTag2": "",
+  "projectTag3": "",
+  "projectTag4": ""
+  },
+  "projectVLng": [
+  0.0
+  ],
+  "projectVLat": [
+  0.0
+  ],
+  "projectVName": [
+  ""
+  ],
+  "projectTagList": [
+  ""
+  ]
+  };
 
   void _addWayPoint() {
     setState(() {

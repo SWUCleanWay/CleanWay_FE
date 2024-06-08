@@ -16,9 +16,7 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
   TextEditingController crewNameController = TextEditingController();
   TextEditingController capacityController = TextEditingController();
   TextEditingController descriptionController = TextEditingController();
-  List<TextEditingController> wayPointsControllers = [
-    TextEditingController()
-  ]; // 경유지를 위한 컨트롤러 리스트
+  List<TextEditingController> wayPointsControllers = [TextEditingController()]; // 경유지를 위한 컨트롤러 리스트
   TextEditingController startLocationController = TextEditingController();
   TextEditingController destinationController = TextEditingController();
   DateTime selectedDate = DateTime.now();
@@ -29,45 +27,34 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
 
   Map<String, dynamic> registerCrewData = {
     'cleanCrewDto': {
-      'userNumber': 0,
       'crewName': '',
       'crewContent': '',
       'crewRecruitment': 0,
     },
-    'cleanCrewProjectDto': {
-      'crewProjectNumber': 0,
-      'crewNumber': 0,
-      'projectWriteTime': '',
-      'projectContent': '',
-      'projectRecruitment': 0,
-      'projectDate': '',
-      'projectTime': '',
-      'projectRoleNumber': 0,
-      'userNumber': 0,
-      'projectSLng': 0.0,
-      'projectSLat': 0.0,
-      'projectVLng': 0.0,
-      'projectVLat': 0.0,
-      'projectDLng': 0.0,
-      'projectDLat': 0.0,
-      "projectSName": '',
-      "projectVName": '',
-      "projectDName": ''
-    }
+    'projectRequestDto': {
+      'cleanCrewProjectDto': {
+        'projectTitle': '',
+        'projectContent': '',
+        'projectRecruitment': 0,
+        'projectDate': '',
+        'projectTime': '',
+        'projectSLng': 0.0,
+        'projectSLat': 0.0,
+        'projectDLng': 0.0,
+        'projectDLat': 0.0,
+        "projectVLng": 0.0,
+        "projectVLat": 0.0,
+        'projectSName': '',
+        'projectDName': '',
+        'projectVName': ''
+      },
+      'projectVLng': [0.0],
+      'projectVLat': [0.0],
+      'projectVName': [''],
+      'projectTagList': ['']
+    },
+    'crewTagList': ['']
   };
-
-  /*void _addWayPoint() {
-    setState(() {
-      if (!showWaypointField) {
-        showWaypointField = true;
-      } else {
-        wayPointsControllers.add(TextEditingController());
-        registerCrewData['cleanCrewProjectDto']['projectVLat'].add(0.0);
-        registerCrewData['cleanCrewProjectDto']['projectVLng'].add(0.0);
-        registerCrewData['cleanCrewProjectDto']['projectVName'].add('');
-      }
-    });
-  }*/
 
   void _addWayPoint() {
     setState(() {
@@ -75,6 +62,9 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
         showWaypointField = true;
       } else {
         wayPointsControllers.add(TextEditingController());
+        registerCrewData['projectRequestDto']['projectVLat'].add(0.0);
+        registerCrewData['projectRequestDto']['projectVLng'].add(0.0);
+        registerCrewData['projectRequestDto']['projectVName'].add('');
       }
     });
   }
@@ -82,6 +72,9 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
   void _removeWayPoint(int index) {
     setState(() {
       wayPointsControllers.removeAt(index);
+      registerCrewData['projectRequestDto']['projectVLat'].removeAt(index);
+      registerCrewData['projectRequestDto']['projectVLng'].removeAt(index);
+      registerCrewData['projectRequestDto']['projectVName'].removeAt(index);
     });
   }
 
@@ -100,8 +93,10 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
   }
 
   Future<void> _selectTime(BuildContext context) async {
-    final TimeOfDay? picked =
-    await showTimePicker(context: context, initialTime: selectedTime);
+    final TimeOfDay? picked = await showTimePicker(
+      context: context,
+      initialTime: selectedTime,
+    );
     if (picked != null && picked != selectedTime) {
       setState(() {
         selectedTime = picked;
@@ -118,28 +113,31 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
     if (result != null) {
       setState(() {
         controller.text = result['spotName'];
-        var projectData = registerCrewData['cleanCrewProjectDto'];
-        if (type == 'S' || type == 'V' || type == 'D') {
-          projectData['project${type}Lat'] = result['spotLat'];
-          projectData['project${type}Lng'] = result['spotLng'];
-          projectData['project${type}Name'] = result['spotName'];
-        } else {
-          print('weird');
-          }
+        var projectData = registerCrewData['projectRequestDto']['cleanCrewProjectDto'];
+        if (type == 'S') {
+          projectData['projectSLat'] = result['spotLat'];
+          projectData['projectSLng'] = result['spotLng'];
+          projectData['projectSName'] = result['spotName'];
+        } else if (type == 'D') {
+          projectData['projectDLat'] = result['spotLat'];
+          projectData['projectDLng'] = result['spotLng'];
+          projectData['projectDName'] = result['spotName'];
+        } else if (type == 'V' && index != null) {
+          registerCrewData['projectRequestDto']['projectVLat'][index] = result['spotLat'];
+          registerCrewData['projectRequestDto']['projectVLng'][index] = result['spotLng'];
+          registerCrewData['projectRequestDto']['projectVName'][index] = result['spotName'];
         }
-      );
+      });
     }
   }
 
-
   Future<void> _registerCrew() async {
-
     registerCrewData['cleanCrewDto']['crewName'] = crewNameController.text;
     registerCrewData['cleanCrewDto']['crewContent'] = descriptionController.text;
     registerCrewData['cleanCrewDto']['crewRecruitment'] = int.tryParse(capacityController.text) ?? 0;
 
-    registerCrewData['cleanCrewProjectDto']['projectDate'] = DateFormat('yyyy-MM-dd').format(selectedDate);
-    registerCrewData['cleanCrewProjectDto']['projectTime'] = selectedTime.format(context);
+    registerCrewData['projectRequestDto']['cleanCrewProjectDto']['projectDate'] = DateFormat('yyyy-MM-dd').format(selectedDate);
+    registerCrewData['projectRequestDto']['cleanCrewProjectDto']['projectTime'] = selectedTime.format(context);
 
     String jsonBody = json.encode(registerCrewData);
     String? token = await myToken.TokenManager.instance.getToken();
@@ -149,14 +147,15 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
     try {
       http.Response response = await http.post(
         Uri.parse('${dotenv.env['NGROK_URL']}/crew/add'),
-        headers: {'Content-Type': 'application/json; charset=UTF-8',
-          'Authorization': 'Bearer $token',},
+        headers: {
+          'Content-Type': 'application/json; charset=UTF-8',
+          'Authorization': 'Bearer $token',
+        },
         body: jsonBody,
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         print("success");
-        /*print(jsonBody);*/
         Navigator.pop(context);
         Navigator.pushReplacement(
           context,
@@ -169,7 +168,6 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
       print('Error occurred: $e');
     }
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -193,12 +191,12 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
                   child: Padding(
                     padding: const EdgeInsets.only(top: 8.0),
                     child: TextField(
-                      controller: wayPointsControllers[0],
+                      controller: wayPointsControllers[index],
                       decoration: InputDecoration(
                         labelText: '경유지',
                         border: OutlineInputBorder(),
                       ),
-                      onTap: () => _navigateAndDisplaySelection(context, wayPointsControllers[0], 'V'),
+                      onTap: () => _navigateAndDisplaySelection(context, wayPointsControllers[index], 'V', index: index),
                     ),
                   ),
                 ),
@@ -211,7 +209,6 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
           }).toList(),
           SizedBox(height: 10),
         ],
-
         TextButton.icon(
           icon: Icon(Icons.add),
           label: Text('경유지 추가'),
@@ -295,9 +292,7 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
                 ),
               ),
               ListTile(
-                title: Text(
-                    '${DateFormat('yyyy-MM-dd').format(selectedDate)}'
-                ),
+                title: Text('${DateFormat('yyyy-MM-dd').format(selectedDate)}'),
                 onTap: () => _selectDate(context),
               ),
               SizedBox(height: 20),
@@ -357,10 +352,7 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
           onPressed: _registerCrew,
           child: Text('등록하기'),
           style: ElevatedButton.styleFrom(
-            backgroundColor: Theme
-                .of(context)
-                .colorScheme
-                .primary,
+            backgroundColor: Theme.of(context).colorScheme.primary,
             foregroundColor: Colors.white,
             minimumSize: Size(double.infinity, 50),
             shape: RoundedRectangleBorder(

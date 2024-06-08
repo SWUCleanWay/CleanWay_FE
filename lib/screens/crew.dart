@@ -52,13 +52,11 @@ class _CrewScreenState extends State<CrewScreen> {
 
   Future<List<Crew>> fetchCrews(String searchWord) async {
     String baseUrl = '${dotenv.env['NGROK_URL']}/crew-project/mycrew';
-    //String url = searchWord.isNotEmpty ? '$baseUrl/search?searchWord=${searchWord}' : baseUrl;
     String? token = await myToken.TokenManager.instance.getToken();
 
     var url = Uri.parse('$baseUrl/search?searchWord=${searchWord}');
     print('Fetching crews with URL: $url');
 
-    // var response = await http.get(Uri.parse(url));
     var response = await http.get(
       url,
       headers: {
@@ -72,31 +70,18 @@ class _CrewScreenState extends State<CrewScreen> {
     if (response.statusCode == 200) {
       var decodedResponse = json.decode(utf8.decode(response.bodyBytes));
 
-      // 검색어가 있을 때와 없을 때 응답 구조 처리
-      if (searchWord.isNotEmpty) {
-        if (decodedResponse is Map<String, dynamic> && decodedResponse.containsKey('myCrewByWordList')) {
-          List<dynamic> crewsJson = decodedResponse['myCrewByWordList'];
-          return crewsJson.map((json) => Crew.fromJson(json)).toList();
-        } else {
-          print('Unexpected JSON structure for search: ${decodedResponse}');
-          throw Exception('Unexpected JSON structure for search');
-        }
+      if (decodedResponse is Map<String, dynamic> && decodedResponse.containsKey('myCrewByWordList')) {
+        List<dynamic> crewsJson = decodedResponse['myCrewByWordList'];
+        return crewsJson.map((json) => Crew.fromJson(json)).toList();
       } else {
-        // 검색어 없이 기본 리스트 호출 시 배열로 직접 반환
-        if (decodedResponse is List) {
-          return decodedResponse.map((json) => Crew.fromJson(json)).toList();
-        } else {
-          print('Unexpected JSON structure for list: ${decodedResponse}');
-          throw Exception('Unexpected JSON structure for list');
-        }
+        print('Unexpected JSON structure: ${decodedResponse}');
+        throw Exception('Unexpected JSON structure');
       }
     } else {
       print('Failed to load crews with status code: ${response.statusCode}');
       throw Exception('Failed to load crews');
     }
   }
-
-
 
   void clearSearch() {
     searchController.clear();

@@ -62,7 +62,7 @@ class CrewDetail {
       projectDName: json['projectDName'],
       projectDLat: json['projectDLat']?.toDouble() ?? 0.0,
       projectDLng: json['projectDLng']?.toDouble() ?? 0.0,
-      projectVLat: json['projecVLat']?.toDouble() ?? 0.0,
+      projectVLat: json['projectVLat']?.toDouble() ?? 0.0,
       projectVLng: json['projectVLng']?.toDouble() ?? 0.0,
       projectSLat: json['projectSLat']?.toDouble() ?? 0.0,
       projectSLng: json['projectSLng']?.toDouble() ?? 0.0,
@@ -95,9 +95,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
   Future<CrewDetail> fetchCrewDetail() async {
     String? token = await myToken.TokenManager.instance.getToken();
     String? baseUrl = dotenv.env['NGROK_URL'];
-    //String url = '${dotenv.env['NGROK_URL']}/crew/detail/${widget.crewNumber}';
     var url = Uri.parse('$baseUrl/crew/detail/${widget.crewNumber}');
-    // var response = await http.get(Uri.parse(url));
     var response = await http.get(
       url,
       headers: {
@@ -107,34 +105,27 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
     );
     if (response.statusCode == 200) {
       List<dynamic> crewList = json.decode(utf8.decode(response.bodyBytes));
-      // crewNumber에 해당하는 객체를 찾습니다.
       Map<String, dynamic>? crewData = crewList.firstWhere(
               (element) => element['crewNumber'] == widget.crewNumber,
           orElse: () => null
       );
 
       if (crewData != null) {
-        // 조건에 맞는 데이터로 CrewDetail 인스턴스를 생성합니다.
         return CrewDetail.fromJson(crewData);
       } else {
-        // crewNumber에 해당하는 데이터가 없는 경우 예외를 발생시킵니다.
         throw Exception('Crew with number ${widget.crewNumber} not found');
       }
     } else {
-      // HTTP 요청이 실패한 경우 예외를 발생시킵니다.
       throw Exception('Failed to load crew details with status code ${response.statusCode}');
     }
-
   }
 
   Future<void> joinCrew() async {
-    if (!isJoined) { // 아직 참여하지 않았다면
-      // String url = '${dotenv.env['NGROK_URL']}/crew/join/${widget.crewNumber}';
+    if (!isJoined) {
       String? token = await myToken.TokenManager.instance.getToken();
       String? baseUrl = dotenv.env['NGROK_URL'];
       var url = Uri.parse('$baseUrl/crew/join/${widget.crewNumber}');
       try {
-        // var response = await http.post(Uri.parse(url));
         var response = await http.post(
           url,
           headers: {
@@ -142,15 +133,17 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
             'Authorization': 'Bearer $token',
           },
         );
-        if (response.statusCode == 303) {
+        if (response.statusCode == 303 || response.statusCode == 200 ) {
           setState(() {
             isJoined = true;
           });
           print("크루 가입 완료");
-          // 상태가 변경된 후 다이얼로그를 표시하기 위해 대기
-          Future.delayed(Duration.zero, () {
+          // Ensure showSuccessDialog is called with the correct context
+          if (mounted) {
+            print("Before showing success dialog");
             showSuccessDialog('크루에 가입되었습니다.');
-          });
+            print("After showing success dialog");
+          }
         } else if (response.statusCode == 500) {
           showErrorDialog('이미 참여한 프로젝트입니다.');
         }
@@ -162,9 +155,8 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
     }
   }
 
-
   void showSuccessDialog(String message) {
-    print("Showing Success Dialog: $message");
+    print("Success Dialog is about to show: $message");
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -173,16 +165,8 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
         actions: [
           TextButton(
             onPressed: () {
+              print("Success dialog OK button pressed");
               Navigator.of(context).pop();
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => CrewDetailPage(
-                    crewNumber: widget.crewNumber,
-                    crewName: widget.crewName,
-                  ),
-                ),
-              );
             },
             child: Text('OK'),
           ),
@@ -208,7 +192,8 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
     );
   }
 
-    @override
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
@@ -274,22 +259,22 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
         ),
       ),
     );
-    }
+  }
 }
 
 Widget buildDetailLayout(CrewDetail detail) {
   final markerS = NMarker(
-      id: "start",
-      position: NLatLng(detail.projectSLat, detail.projectSLng),
-    );
-  final markerV =NMarker(
-      id: "via",
-      position: NLatLng(detail.projectVLat, detail.projectVLng),
-    );
-  final markerD =NMarker(
-      id: "destination",
-      position: NLatLng(detail.projectDLat, detail.projectDLng),
-    );
+    id: "start",
+    position: NLatLng(detail.projectSLat, detail.projectSLng),
+  );
+  final markerV = NMarker(
+    id: "via",
+    position: NLatLng(detail.projectVLat, detail.projectVLng),
+  );
+  final markerD = NMarker(
+    id: "destination",
+    position: NLatLng(detail.projectDLat, detail.projectDLng),
+  );
 
   final onMarkerinfoWindowS = NInfoWindow.onMarker(
     id: markerS.info.id,
@@ -304,86 +289,106 @@ Widget buildDetailLayout(CrewDetail detail) {
     text: "도착지: ${detail.projectDName}",
   );
 
-  final polyline = NPolylineOverlay(
-    id: "route",
-    coords: [
+  List<NLatLng> polylineCoords;
+  if (detail.projectVLat == 0.0 && detail.projectVLng == 0.0) {
+    polylineCoords = [
+      NLatLng(detail.projectSLat, detail.projectSLng),
+      NLatLng(detail.projectDLat, detail.projectDLng),
+    ];
+  } else {
+    polylineCoords = [
       NLatLng(detail.projectSLat, detail.projectSLng),
       NLatLng(detail.projectVLat, detail.projectVLng),
       NLatLng(detail.projectDLat, detail.projectDLng),
-    ],
+    ];
+  }
+
+  final polyline = NPolylineOverlay(
+    id: "route",
+    coords: polylineCoords,
     color: Colors.blue,
-    width: 5,
+    width: 3,
   );
 
-    return SingleChildScrollView(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Padding(
-            padding: EdgeInsets.fromLTRB(20.0, 20.0, 0, 0),
-            child: Text(
-              detail.title,
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-            ),
+  return SingleChildScrollView(
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Padding(
+          padding: EdgeInsets.fromLTRB(20.0, 20.0, 0, 0),
+          child: Text(
+            detail.title,
+            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
           ),
-          ListTile(
-            contentPadding: EdgeInsets.fromLTRB(20.0, 0, 20.0, 0),
-            title: Text(detail.author),
-            subtitle: Text(detail.createdAt),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('모임 위치', style: TextStyle(fontSize: 16.0, fontWeight: FontWeight.bold)),
-                SizedBox(height: 10),
-                Text(detail.location),
-                Divider(),
-                Text('루트', style: TextStyle(fontSize: 16.0, fontWeight: FontWeight.bold)),
-                SizedBox(height: 10),
-                Text('출발지 : ${detail.projectSName}'),
+        ),
+        ListTile(
+          contentPadding: EdgeInsets.fromLTRB(20.0, 0, 20.0, 0),
+          title: Text(detail.author),
+          subtitle: Text(detail.createdAt),
+        ),
+        Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('모임 위치', style: TextStyle(
+                  fontSize: 16.0, fontWeight: FontWeight.bold)),
+              SizedBox(height: 10),
+              Text(detail.location),
+              Divider(),
+              Text('루트', style: TextStyle(
+                  fontSize: 16.0, fontWeight: FontWeight.bold)),
+              SizedBox(height: 10),
+              Text('출발지 : ${detail.projectSName}'),
+              if (detail.projectVLat != 0.0 && detail.projectVLng != 0.0)
                 Text('경유지 : ${detail.projectVName}'),
-                Text('목적지 : ${detail.projectDName}'),
-                SizedBox(
-                  height: 10,
-                ),
-            Container(
-              height: 200,  // 지도의 높이 설정
-              child: NaverMap(
-                onMapReady: (controller) {
-                  controller.updateCamera(
+              Text('목적지 : ${detail.projectDName}'),
+              SizedBox(height: 10),
+              Container(
+                height: 200,
+                child: NaverMap(
+                  onMapReady: (controller) {
+                    controller.updateCamera(
                       NCameraUpdate.scrollAndZoomTo(
-                          target: NLatLng(detail.projectSLat, detail.projectSLng)
-                      )
-                  );
-                  controller.addOverlayAll({markerS, markerV, markerD, polyline});
-                  markerS.openInfoWindow(onMarkerinfoWindowS);
-                  markerV.openInfoWindow(onMarkerinfoWindowV);
-                  markerD.openInfoWindow(onMarkerinfoWindowD);
-                },
+                        target: NLatLng(detail.projectSLat, detail
+                            .projectSLng),
+                      ),
+                    );
+                    controller.addOverlayAll(
+                        {markerS, markerD, polyline});
+                    markerS.openInfoWindow(onMarkerinfoWindowS);
+                    if (detail.projectVLat != 0.0 && detail.projectVLng != 0.0) {
+                      controller.addOverlay(markerV);
+                      markerV.openInfoWindow(onMarkerinfoWindowV);
+                    }
+                    markerD.openInfoWindow(onMarkerinfoWindowD);
+                  },
+                ),
               ),
-            ),
-                Divider(),
-                Text('날짜', style: TextStyle(fontSize: 16.0, fontWeight: FontWeight.bold)),
-                SizedBox(height: 10),
-                Text(detail.date),
-                Divider(),
-                Text('시간', style: TextStyle(fontSize: 16.0, fontWeight: FontWeight.bold)),
-                SizedBox(height: 10),
-                Text(detail.time),
-                Divider(),
-                Text('참여 인원', style: TextStyle(fontSize: 16.0, fontWeight: FontWeight.bold)),
-                SizedBox(height: 10),
-                Text('${detail.participants} / ${detail.capacity}명'),
-                Divider(),
-                Text('추가 정보', style: TextStyle(fontSize: 16.0, fontWeight: FontWeight.bold)),
-                SizedBox(height: 10),
-                Text(detail.additionalInfo),
-              ],
-            ),
+              Divider(),
+              Text('날짜', style: TextStyle(
+                  fontSize: 16.0, fontWeight: FontWeight.bold)),
+              SizedBox(height: 10),
+              Text(detail.date),
+              Divider(),
+              Text('시간', style: TextStyle(
+                  fontSize: 16.0, fontWeight: FontWeight.bold)),
+              SizedBox(height: 10),
+              Text(detail.time),
+              Divider(),
+              Text('참여 인원', style: TextStyle(
+                  fontSize: 16.0, fontWeight: FontWeight.bold)),
+              SizedBox(height: 10),
+              Text('${detail.participants} / ${detail.capacity}명'),
+              Divider(),
+              Text('추가 정보', style: TextStyle(
+                  fontSize: 16.0, fontWeight: FontWeight.bold)),
+              SizedBox(height: 10),
+              Text(detail.additionalInfo),
+            ],
           ),
-        ],
-      ),
-    );
-  }
+        ),
+      ],
+    ),
+  );
+}
