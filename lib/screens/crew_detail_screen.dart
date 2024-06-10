@@ -212,17 +212,6 @@ class _CrewDetailPageState extends State<CrewDetailPage> {
             child: Text('크루 프로젝트 생성하기'),
           ),
         ),
-        PopupMenuItem(
-          child: GestureDetector(
-            onTap: () {
-              Navigator.pop(context);
-              // Navigator.of(context).push(
-              //   MaterialPageRoute(builder: (context) => Create()),
-              // );
-            },
-            child: Text('크루원 모집하기'),
-          ),
-        ),
       ],
     );
   }
