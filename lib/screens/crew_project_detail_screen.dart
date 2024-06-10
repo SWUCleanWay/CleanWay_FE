@@ -129,12 +129,7 @@ class _CrewProjectDetailScreenState extends State<CrewProjectDetailScreen> {
     CrewDetail detail = await crewDetailFuture;
     String? token = await myToken.TokenManager.instance.getToken();
     String? baseUrl = dotenv.env['NGROK_URL'];
-    var url = Uri.parse('$baseUrl/crew/join/${widget.crewNumber}/${widget.crewProjectNumber}');
-
-    print("Joining project with URL: $url");
-    print("Token: $token");
-    print("isJoined: $isJoined");
-    print("isPastProject: ${detail.isPastProject}");
+    var url = Uri.parse('$baseUrl/crew-project/join/${widget.crewNumber}/${widget.crewProjectNumber}');
 
     if (!isJoined && detail.isPastProject != "Y") {
       try {
@@ -146,32 +141,25 @@ class _CrewProjectDetailScreenState extends State<CrewProjectDetailScreen> {
           },
         );
 
-        print("Join project response status: ${response.statusCode}");
-        print("Join project response body: ${response.body}");
-
-        if (response.statusCode == 303 || response.statusCode == 200) {
+        if (response.statusCode == 200 || response.statusCode == 201 || response.statusCode == 303) {
           setState(() {
             isJoined = true; // Update state to reflect join status
           });
           if (mounted) {
-            print("Before showing success dialog");
             showSuccessDialog('참여되었습니다.');
-            print("After showing success dialog");
           }
         } else if (response.statusCode == 500) {
-          showErrorDialog('참여에 실패했습니다.');
+          showErrorDialog('서버 오류가 발생했습니다. 나중에 다시 시도해 주세요.');
         } else {
-          showErrorDialog('참여에 실패했습니다.');
+          showErrorDialog('참여에 실패했습니다. (${response.statusCode})');
         }
       } catch (e) {
-        print("Network error: $e");
-        showErrorDialog('Network error: $e');
+        showErrorDialog('네트워크 오류가 발생했습니다. ($e)');
       }
     } else {
       showErrorDialog('이미 참여했거나 지난 프로젝트입니다.');
     }
   }
-
 
   void showSuccessDialog(String message) {
     print("Success Dialog is about to show: $message");
